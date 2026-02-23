@@ -1,10 +1,9 @@
-# _CourseName
-
-A detailed collection of LaTeX-based lecture notes for the _CourseName course at the University of Trento, academic year 2025/2026, instructed by Prof. _professorName.
+# Computer Vision
+A detailed collection of LaTeX-based lecture notes for the Computer Vision course at the University of Trento, academic year 2025/2026, instructed by Prof. Nicola Conci.
 
 <div align="center">
     <a href="notes.pdf">
-        <img src="img/notes.png" alt="Notes Preview" width="300px">
+        <img src="media/preview.png" alt="Notes Preview" width="300px">
     </a>
     <br>
     <a href="notes.pdf" style="display: block; margin-top: 10px; font-size: 15px; font-weight: bold; color: #007acc;">
