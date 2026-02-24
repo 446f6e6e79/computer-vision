@@ -1,0 +1,31 @@
+\begin{tikzpicture}[
+    block/.style={draw, rectangle, rounded corners, minimum width=2.8cm, minimum height=1.2cm, fill=gray!15},
+    cloud/.style={draw, ellipse, minimum width=2.5cm, minimum height=1.2cm},
+    storage/.style={draw, cylinder, shape border rotate=90, aspect=0.25, minimum height=1cm, minimum width=1.8cm},
+    arrow/.style={->, thick},
+    small/.style={font=\small}
+]
+
+% Nodes
+\node[cloud] (real) {Real world};
+\node[block, right=1cm of real] (acq) {Acquisition};
+\node[block, right=1cm of acq] (enh) {Enhancement};
+\node[block, right=1cm of enh] (enh2) {High-level processing};
+
+\node[cloud, above=1.6cm of acq] (noise) {Noise};
+\node[block, above=1.6cm of enh] (filter) {Filtering};
+
+\node[storage, below=1.5cm of acq] (store1) {Storage};
+\node[storage, below=1.5cm of enh] (store2) {Storage};
+
+% Connections
+\draw[arrow] (real) -- (acq);
+\draw[arrow] (acq) -- (enh);
+\draw[arrow] (enh) -- (enh2);
+\draw[arrow] (noise) -- (acq);
+\draw[arrow] (filter) -- (enh);
+
+\draw[arrow] (acq) -- node[right, small]{TX} (store1);
+\draw[arrow] (enh) -- node[right, small]{TX} (store2);
+
+\end{tikzpicture}

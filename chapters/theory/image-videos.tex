@@ -1,0 +1,87 @@
+\section{Image and Videos}
+Before introducing the concept of images and videos, we first need to define
+the concept of \textbf{signal}, how to represent it and how to process it.
+
+\subsection{Processing Chain}
+The \textbf{processing chain} of an image can be represented by the following steps:
+\begin{itemize}
+    \item \textbf{Acquisition}: The process of transforming a real-world physical signal into
+    a digital one, by means of a \textbf{sensor}. In this process we are basically transferring
+    a portion of the real 3D world into a 2D image.
+    This process is affected by \textbf{noise}, which can be added by both the real world
+    and the sensor itself.
+    \\Once the signal is acquired, it is transformed using a standard format to a discrete signal,
+    by applying both a \textbf{sampling} and a \textbf{quantization} process.
+    \item \textbf{Enhancement}: The process of applying a transformation to the signal,
+    by applying a \textbf{filter} to it, in order to make the picture more suitable for our goal.
+    \item \textbf{High-level processing}: The process of extracting information from the signal. This
+    is what we will see in the next chapters.
+\end{itemize}
+\begin{figure}[H]
+    \centering
+    \scalebox{0.8}{
+        \input{Tikz/image-videos/processing-chain.tex}
+    }
+    \caption{Processing chain of an image.}
+\end{figure}
+
+\subsection{Digital Images}
+A digital image can be seen as a collection of 2D coordinates, called \textbf{pixels} (picture elements).
+Each pixel represents a portion of the real world and can be \textbf{gray-scale} (black and white-1 channel) or \textbf{color} (typically 3 channels).
+
+\subsubsection{Sampling}
+As we said before, to transform a real-world signal into a digital one, we need to apply a sampling process.
+If we take in consideration video signals, they need to be sampled in all three dimensions: the two spatial dimensions ($x$ and $y$) and the temporal dimension ($t$).
+
+\begin{figure}[H]
+    \centering
+    \scalebox{0.8}{
+        \input{Tikz/image-videos/sampling.tex}
+    }
+     \caption{Spatio-temporal sampling of a video signal.}
+\end{figure}
+This process is called \textbf{spatio-temporal sampling}, and it transforms a continuous signal $s_c(x,y,t)$ into a discrete 
+one $s(m,n,k)$, where $m$, $n$ and $k$ are the indices of the spatial and temporal dimensions, respectively.
+\\\\The output of this process is a 2D matrix of pixels. Once we have this, we can manipulate it using many techniques.
+It's important to know that pixels are numbered starting from the top-left corner, and that the value of 
+a pixel in certain position $(c,r)$ for a given image $I$ is denoted as $I(c,r)$, where $c$ is the column index and $r$ is the row index.
+The value of a pixel is typically normalized in the range $[0,1]$.
+
+\subsection{Colors}
+Color is an attribute that we as humans associate to objects in the real world. 
+Mathematically, we can define it as a combination of different \textbf{wavelengths}. Different 
+representations are used to represent colors, we will see the most common ones in the following chapters.
+
+\subsubsection{RGB}
+One of the most common representations of colors is the \textbf{RGB} (Red, Green, Blue) one.
+In this representation, starting from a black image, we can add different amounts of red, green and blue
+to it, creating a wide range of colors.
+
+\subsubsection{Problems of RGB}
+The RGB representation is not the optimal one. In fact, if we analyze how the human eye perceives colors,
+we can see that it is a lot more sensitive to some colors than others. For example, we are more sensitive to green and light,
+and less sensitive to red and blue.
+This implies that a lot of information is redundant in the RGB representation, and other representations
+may be more effective.
+\\\\Also, if we take a RGB image and separate its three components, we can see that they are highly correlated, 
+meaning that they contain a lot of redundant information. This is not ideal for image processing tasks.
+
+\subsubsection{YCbCr}
+The \textbf{YCbCr} representation is a color space that separates the luminance (Y) from the color information (Cb and Cr). 
+This representation is more suitable for image processing because it separates the brightness information from the color information, which is more aligned with how the human eye perceives colors.
+\\Also, this allows to safely down sample the color information (Cb and Cr), without affecting the quality of the image, 
+since the human eye is less sensitive to color information than to brightness information.
+
+\subsubsection{HSV}
+The \textbf{HSV} (Hue, Saturation, Value) representation is another color space that separates the hue (H) from the saturation (S) and value (V).
+This representation is more suitable for computer graphics and image processing.
+
+\subsubsection{Bayer Pattern}
+
+\subsubsection{Quantization}
+
+\subsection{Videos}
+While static images provided reliable information about static scenes, they lack the motion information
+such as temporal evolution, rapid changes and dynamic interactions.
+Videos, on the other hand, capture a sequence of images over time, providing a richer representation of the world.
+\subsubsection{Important Features}

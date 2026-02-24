@@ -1,0 +1,18 @@
+\begin{tikzpicture}[
+    block/.style={draw, rectangle, rounded corners, minimum width=2.8cm, minimum height=1.2cm, fill=gray!15},
+    arrow/.style={->, thick},
+    txt_block/.style={font=\large}
+]
+
+% Nodes
+\node[block] (sts) {Spatio-temporal Sampling};
+\node[txt_block, left=1cm of sts] (input) {$s_c(x,y,t)$};
+\node[txt_block, right=1cm of sts] (output) {$s(m,n,k)$};
+
+% Connections
+\draw[arrow] (input) -- (sts);
+\draw[arrow] (sts) -- (output);
+
+\node[txt_block, below=0.5cm of input] (input_desc) {Continuous signal};
+\node[txt_block, below=0.5cm of output] (output_desc) {Discrete signal};
+\end{tikzpicture}
