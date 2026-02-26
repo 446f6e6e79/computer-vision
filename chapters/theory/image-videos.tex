@@ -1,4 +1,4 @@
-\section{Image and Videos}
+\section{Images and Videos}
 Before introducing the concept of images and videos, we first need to define
 the concept of \textbf{signal}, how to represent it and how to process it.
 
@@ -6,11 +6,12 @@ the concept of \textbf{signal}, how to represent it and how to process it.
 The \textbf{processing chain} of an image can be represented by the following steps:
 \begin{itemize}
     \item \textbf{Acquisition}: The process of transforming a real-world physical signal into
-    a digital one, by means of a \textbf{sensor}. In this process we are basically transferring
+    a digital one, by means of a \textbf{sensor}. In this process, we essentially transfer
     a portion of the real 3D world into a 2D image.
     This process is affected by \textbf{noise}, which can be added by both the real world
     and the sensor itself.
-    \\Once the signal is acquired, it is transformed using a standard format to a discrete signal,
+
+    Once the signal is acquired, it is transformed using a standard format to a discrete signal,
     by applying both a \textbf{sampling} and a \textbf{quantization} process.
     \item \textbf{Enhancement}: The process of applying a transformation to the signal,
     by applying a \textbf{filter} to it, in order to make the picture more suitable for our goal.
@@ -27,11 +28,11 @@ The \textbf{processing chain} of an image can be represented by the following st
 
 \subsection{Digital Images}
 A digital image can be seen as a collection of 2D coordinates, called \textbf{pixels} (picture elements).
-Each pixel represents a portion of the real world and can be \textbf{gray-scale} (black and white-1 channel) or \textbf{color} (typically 3 channels).
+Each pixel represents a portion of the real world and can be \textbf{gray-scale} (black and white, 1 channel) or \textbf{color} (typically 3 channels).
 
 \subsubsection{Sampling}
 As we said before, to transform a real-world signal into a digital one, we need to apply a sampling process.
-If we take in consideration video signals, they need to be sampled in all three dimensions: the two spatial dimensions ($x$ and $y$) and the temporal dimension ($t$).
+When considering video signals, they need to be sampled in all three dimensions: the two spatial dimensions ($x$ and $y$) and the temporal dimension ($t$).
 
 \begin{figure}[H]
     \centering
@@ -42,46 +43,221 @@ If we take in consideration video signals, they need to be sampled in all three 
 \end{figure}
 This process is called \textbf{spatio-temporal sampling}, and it transforms a continuous signal $s_c(x,y,t)$ into a discrete 
 one $s(m,n,k)$, where $m$, $n$ and $k$ are the indices of the spatial and temporal dimensions, respectively.
-\\\\The output of this process is a 2D matrix of pixels. Once we have this, we can manipulate it using many techniques.
-It's important to know that pixels are numbered starting from the top-left corner, and that the value of 
+
+The output of this process is a 2D matrix of pixels. Once we have this, we can manipulate it using many techniques.
+Pixels are numbered starting from the top-left corner, and the value of 
 a pixel in certain position $(c,r)$ for a given image $I$ is denoted as $I(c,r)$, where $c$ is the column index and $r$ is the row index.
 The value of a pixel is typically normalized in the range $[0,1]$.
 
 \subsection{Colors}
-Color is an attribute that we as humans associate to objects in the real world. 
-Mathematically, we can define it as a combination of different \textbf{wavelengths}. Different 
-representations are used to represent colors, we will see the most common ones in the following chapters.
+Color is an attribute that humans associate with objects in the real world. 
+Mathematically, we can define it as a combination of different \textbf{wavelengths}. Different representations are used to represent colors; we will discuss the most common ones in the following chapters.
 
 \subsubsection{RGB}
 One of the most common representations of colors is the \textbf{RGB} (Red, Green, Blue) one.
-In this representation, starting from a black image, we can add different amounts of red, green and blue
+In the \textit{addictive color model}, starting from a black image, we can add different amounts of red, green and blue
 to it, creating a wide range of colors.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{media/image-videos/RGB.png}
+    \caption{Addictive color model.}
+\end{figure}
+We can also define the opposite process, called \textit{subtractive color model}. In this model, we start from a white image, 
+and we subtract different amounts of cyan, magenta and yellow to it (the \textbf{primary colors}), creating a wide range of colors.
 
 \subsubsection{Problems of RGB}
 The RGB representation is not the optimal one. In fact, if we analyze how the human eye perceives colors,
-we can see that it is a lot more sensitive to some colors than others. For example, we are more sensitive to green and light,
-and less sensitive to red and blue.
+we can see that it is a lot more sensitive to some colors than others. For example, we are more sensitive to luminance than to color information,
+and less sensitive to color variations.
 This implies that a lot of information is redundant in the RGB representation, and other representations
 may be more effective.
-\\\\Also, if we take a RGB image and separate its three components, we can see that they are highly correlated, 
-meaning that they contain a lot of redundant information. This is not ideal for image processing tasks.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{media/image-videos/eye-sensitivity.png}
+    \caption{Sensitivity of the human eye to different colors.}
+\end{figure}
+
+Also, if we take an RGB image and separate its three components, we can see that they are highly correlated, 
+meaning that they contain a lot of redundant information. This is also not ideal for image processing tasks.
 
 \subsubsection{YCbCr}
 The \textbf{YCbCr} representation is a color space that separates the luminance (Y) from the color information (Cb and Cr). 
-This representation is more suitable for image processing because it separates the brightness information from the color information, which is more aligned with how the human eye perceives colors.
-\\Also, this allows to safely down sample the color information (Cb and Cr), without affecting the quality of the image, 
-since the human eye is less sensitive to color information than to brightness information.
+This representation is more suitable for image compression (used in JPEG and MPEG standards) and transmission, as it allows 
+to reduce the amount information, without losing too much quality to the human eye.
+\begin{figure}[H]
+    \centering
+    \scalebox{0.8}{
+        \input{Tikz/image-videos/YCbCr.tex}
+    }
+    \caption{YCbCr compression example.}
+\end{figure}
+As we can see from the figure, by down-sampling the Cb and Cr components by a factor of 2, we can reduce the size of the image in half,
+without any noticeable difference in quality to the human eye.
 
 \subsubsection{HSV}
 The \textbf{HSV} (Hue, Saturation, Value) representation is another color space that separates the hue (H) from the saturation (S) and value (V).
 This representation is more suitable for computer graphics and image processing.
 
 \subsubsection{Bayer Pattern}
+In the acquisition process, the sensor of a camera must be able to capture the light information for all the tree components in order
+to create a color image. The perfect solution would be to have three different sensors, one for each color component, but this is not practical and too expensive.
+
+The most common solution is to use a \textbf{Bayer pattern}, which is a mosaic of color filters that are placed on top of the sensor.
+They are arranged in a specific pattern, to correctly exploit the sensitivity of the human eye to different colors. The pattern is composed as follows:
+\begin{itemize}
+    \item 50\% of the pixels are green, to capture the luminance information, which is the most important for the human eye.
+    \item 25\% of the pixels are red, to capture the red color information.
+    \item 25\% of the pixels are blue, to capture the blue color information.
+\end{itemize}
+This pattern allows to capture the color information in a single shot, without the need for multiple sensors, and it is widely used in digital cameras.
 
 \subsubsection{Quantization}
+Once we have the discrete signal, we need to quantize it, meaning that we need to assign a finite number of values to the pixel values.
+The most common quantization is to use 8 bits per pixel (bpp), which allows to represent 256 different values for each channel.
+
+This is a good compromise between the quality of the image and the amount of data that we need to store and transmit, while
+also being handy for processing, as each pixel value can be represented by only one byte of memory.
+Using less than 8 bpp would result in a loss of quality, introducing the problem of \textbf{counting}.
+
+After quantization, we can represent the pixel values as integers in the range $[0,255]$, where 0 represents black and 255 represents the maximum intensity of the color.
+For colored images, we can represent the pixel values as a tuple of three integers, one for each channel (R, G, B), in the range $[0,255]$.
 
 \subsection{Videos}
-While static images provided reliable information about static scenes, they lack the motion information
-such as temporal evolution, rapid changes and dynamic interactions.
+While static images provide information about static scenes, they lack motion information
+such as temporal evolution and dynamic interactions.
 Videos, on the other hand, capture a sequence of images over time, providing a richer representation of the world.
+
+A video can be seen as a sequence of 2D images, that represent the projection of a \textbf{moving} 3D scene onto the video camera sensor.
+Usually videos have a lower resolution than images, as they would be too heavy to store and transmit otherwise. Each second of video is composed by a certain number of frames
+(typically 24, 30 or 60), and each frame is a 2D image. For videos lasting several minutes, the amount of data can be huge.
+Also, the information carried by videos is mostly given by the motion, and not by the color information.
+
 \subsubsection{Important Features}
+Once the images are acquired, we can extract some important features from them. Usually we are interested in:
+\begin{itemize}
+    \item \textbf{Color} information and its distribution in the image. Described by the histogram of the image;
+    \item \textbf{Shape} information, given by the contours and edges in the image. Described by the edges of the image.
+\end{itemize}
+If we take in consideration videos, we are interested how the two previous features evolve over time.
+This has many challenges
+
+\subsection{Histogram}
+A histogram is a simple way to describe the color distribution of an image. 
+It can be seen as a probability distribution of the pixel values in the image.
+For a gray-scale image, the histogram is a 1D array of 256 values, where each value 
+represents the number of pixels in the image that have the corresponding intensity value.
+
+For an $M \times N$ grayscale image $I$, we have the following:
+\begin{itemize}
+    \item The sum over all the histogram values is equal to the total number of pixels in the image:
+    \[ \sum_{i=0}^{255} H(i) = M \times N \]
+    \item We can represent the histogram as a probability distribution by normalizing it:
+    \[ hist(i) = \frac{\#pixels: I(c,r) = i}{M \times N} \]
+\end{itemize}
+This can obviously be extended to color images, by computing the histogram for each channel separately.
+
+\subsubsection{Information from the histogram}
+The histogram can give us some information about the image, such as:
+\begin{itemize}
+    \item The \textbf{mean} intensity of the image, giving us an idea of how bright or dark the image is;
+    \item The \textbf{distribution} of colors in the image.
+\end{itemize}
+This can be seen as a signature of the image, and it can be used for very different tasks.
+
+\subsection{Simple Operations on the Histogram}
+Given the histogram of an image, we can apply some simple operations to it, in order to enhance the image or to extract some information from it.
+
+\subsubsection{Stretching}
+One of the most common operations that we can do on an image is \textbf{stretching}.
+This is a simple operation that allows to enhance the contrast of the image, by stretching the histogram to cover the entire range of pixel values.
+
+To do this, we usually apply a piece-wise linear transformation to the pixel values.
+We define two thresholds, $t_1$ and $t_2$, and we apply the following transformation to the pixel values:
+\begin{itemize}
+    \item If $I(c,r) < t_1$, we set $I'(c,r) = 0$. This means that all the pixel values below $t_1$ are set to black.
+    \item If $I(c,r) > t_2$, we set $I'(c,r) = 255$. This means that all the pixel values above $t_2$ are set to white.
+    \item If $t_1 \leq I(c,r) \leq t_2$, we create a linear transformation that maps the range $[t_1, t_2]$ to the range $[0, 255]$:
+\end{itemize}
+The first and the second operations are called \textbf{clipping}, while the third one is called \textbf{scaling}.
+
+\subsubsection{Equalization}
+Ideally, we would like to have a histogram that is as flat as possible, meaning that all the pixel 
+values are equally represented in the image. This can be achieved by applying a transformation to the image
+called \textbf{equalization}. This transformation is defined as follows:
+\begin{itemize}
+    \item \textbf{Cumulative histogram}: We first compute the cumulative histogram of the image, which is defined as:
+    \[ CHist_I(i) = \sum_{k=0}^{i} hist(k) \]
+    \item \textbf{Equalization transformation}: We then apply the following transformation to the pixel values:
+    \[ hist_{equalized}(i) = \frac{CHist_I(i) - CHist_I(0)}{M \times N} \times 255 \]
+\end{itemize}
+
+\subsection{Edge Extraction}
+Edge extraction is a fundamental operation in image processing, as it allows to extract the shape 
+information from the image. An edge can be seen as a \textbf{sharp change} in the brightness of the image.
+
+The process of edge extraction can be seen as a two-step process:
+\begin{itemize}
+    \item \textbf{Edge detection}: determine the direction and the strength of edges for each pixel in the image.
+    This can be done using different techniques, such as gradient-based methods or Laplacian-based methods.
+    \item \textbf{Binarization}: Once we have the edge strength for each pixel, we need to apply a threshold to it, 
+    in order to determine which pixels are edges and which are not (binary image of edges).
+\end{itemize}
+
+\subsubsection{Gradient based approach}
+In the gradient-based approach, the goal is to find maxima and minima pixels in the image, along a certain direction.
+This can be formalized as:
+\begin{equation}
+    \frac{\partial f}{\partial r} = \frac{\partial f}{\partial x} \frac{\partial x}{\partial r} + \frac{\partial f}{\partial y} \frac{\partial y}{\partial r} = f_x cos(\theta) + f_y sin(\theta)
+\end{equation}
+Where $f$ is the image, $r$ is the direction of the edge, and $\theta$ is the angle of the edge with respect to the x-axis.
+We can then derivate it again with respect to $\theta$ to find the maxima and minima directions:
+\begin{equation}
+    \frac{\partial}{\partial \theta} \left( \frac{\partial f}{\partial r} \right) = -f_x sin(\theta_g) + f_y cos(\theta_g) = 0 \implies \theta_g = arctan\left( \frac{f_y}{f_x} \right)
+\end{equation}
+Where $\theta_g$ is the direction of the edge. We can then compute the edge strength as the magnitude of the gradient:
+\begin{equation}
+    \sqrt{f_x^2 + f_y^2}
+\end{equation}
+
+\subsubsection{Practical Example - Sobel Operators}
+In practice, \textbf{FIR filters} are typically adopted to compute the gradient of the image, as they are computationally efficient
+and can be easily implemented using convolution.
+
+The most common FIR filters for edge detection are the \textbf{Sobel operators}, which are defined as follows:
+\begin{equation}
+    G_x = \begin{bmatrix}
+    -1 & 0 & 1 \\
+    -2 & 0 & 2 \\
+    -1 & 0 & 1
+    \end{bmatrix}, \quad
+    G_y = \begin{bmatrix}
+    -1 & -2 & -1 \\
+    0 & 0 & 0 \\
+    1 & 2 & 1
+    \end{bmatrix}
+\end{equation}
+For each pixel in the image, we apply the two filters to it and compute the edge strength as the magnitude of the gradient:
+\begin{equation}
+    D = \sqrt{ D_x^2 + D_y^2}
+\end{equation}
+Where $D_x$ and $D_y$ are the results of the convolution of the image with the $G_x$ and $G_y$ filters, respectively.
+
+\subsubsection{Convolution}
+In order to apply the filters to the image, we need to perform a convolution operation between an image $f$ and a filter $h$.
+In 2D, the convolution is defined as follows:
+\begin{equation}
+    g(x,y) = (f * h)(x,y) = \sum_{i=-\infty}^{\infty} \sum_{j=-\infty}^{\infty} f(i,j) h(x-i, y-j)
+\end{equation}
+In simpler words, we first flip the filter $h$ 180 degrees counter-clockwise, and then we slide it over the image $f$, computing 
+the sum of the products of the overlapping pixels at each position.
+\begin{figure}[H]
+    \centering
+    \scalebox{0.8}{
+        \input{Tikz/image-videos/convolution.tex}
+    }
+    \caption{Example of convolution between an image and a filter.}
+\end{figure}
+
+It's important to note that the output of the convolution operation must be stored in a new image, as we need to use the original image for the next pixels.
+
+\subsection{Smoothing / Enhancement}

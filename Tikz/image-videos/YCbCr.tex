@@ -1,0 +1,24 @@
+\begin{tikzpicture}[
+    block/.style={draw, rectangle, minimum width=1.2cm, minimum height=1.2cm, },
+    Y-block/.style={draw, rectangle, minimum width=1.2cm, minimum height=1.2cm, fill=teal!25, draw=teal!70},
+    reduced-block/.style={draw, rectangle, minimum width=0.6cm, minimum height=0.6cm, fill=orange!20, draw=orange!70},
+    arrow/.style={->,>=stealth,line width=1.5pt, color=teal!60}
+]
+
+% Original blocks (left side)
+\node[Y-block] (Y-1) {Y};
+\node[block, fill=purple!15, draw=purple!60, right=0cm of Y-1] (Cb-1) {Cb};
+\node[block, fill=purple!15, draw=purple!60, right=0cm of Cb-1] (Cr-1) {Cr};
+
+% Label for original
+\node[below=0.3cm of Cb-1] {\small Original Image};
+
+% Compressed blocks (right side)
+\node[Y-block, right=1.8cm of Cb-1] (Y-2) {Y};
+\node[reduced-block, right=0.cm of Y-2, yshift=0.3cm] (Cb-2) {Cb};
+\node[reduced-block, right=0cm of Cb-2] (Cr-2) {Cr};
+
+% Label for compressed
+\node[below=0.3cm of Cb-2, yshift=-0.6cm] {\small Compressed Image};
+
+\end{tikzpicture}

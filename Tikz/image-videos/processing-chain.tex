@@ -1,8 +1,9 @@
 \begin{tikzpicture}[
-    block/.style={draw, rectangle, rounded corners, minimum width=2.8cm, minimum height=1.2cm, fill=gray!15},
-    cloud/.style={draw, ellipse, minimum width=2.5cm, minimum height=1.2cm},
-    storage/.style={draw, cylinder, shape border rotate=90, aspect=0.25, minimum height=1cm, minimum width=1.8cm},
-    arrow/.style={->, thick},
+    block/.style={draw, rectangle, rounded corners, minimum width=2.8cm, minimum height=1.2cm, fill=teal!25, draw=teal!70},
+    filter/.style={draw, rectangle, rounded corners, minimum width=2.8cm, minimum height=1.2cm, fill=orange!20, draw=orange!70},
+    cloud/.style={draw, ellipse, minimum width=2.5cm, minimum height=1.2cm, fill=red!15, draw=red!60},
+    storage/.style={draw, cylinder, shape border rotate=90, aspect=0.25, minimum height=1cm, minimum width=1.8cm, fill=orange!20, draw=orange!70},
+    arrow/.style={->, thick, color=teal!60},
     small/.style={font=\small}
 ]
 
@@ -13,7 +14,7 @@
 \node[block, right=1cm of enh] (enh2) {High-level processing};
 
 \node[cloud, above=1.6cm of acq] (noise) {Noise};
-\node[block, above=1.6cm of enh] (filter) {Filtering};
+\node[filter, above=1.6cm of enh] (filter) {Filtering};
 
 \node[storage, below=1.5cm of acq] (store1) {Storage};
 \node[storage, below=1.5cm of enh] (store2) {Storage};
