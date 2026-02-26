@@ -117,7 +117,7 @@ The most common quantization is to use 8 bits per pixel (bpp), which allows to r
 
 This is a good compromise between the quality of the image and the amount of data that we need to store and transmit, while
 also being handy for processing, as each pixel value can be represented by only one byte of memory.
-Using less than 8 bpp would result in a loss of quality, introducing the problem of \textbf{counting}.
+Using less than 8 bpp would result in a loss of quality, introducing the problem of \textbf{contouring}.
 
 After quantization, we can represent the pixel values as integers in the range $[0,255]$, where 0 represents black and 255 represents the maximum intensity of the color.
 For colored images, we can represent the pixel values as a tuple of three integers, one for each channel (R, G, B), in the range $[0,255]$.
@@ -256,8 +256,91 @@ the sum of the products of the overlapping pixels at each position.
         \input{Tikz/image-videos/convolution.tex}
     }
     \caption{Example of convolution between an image and a filter.}
-\end{figure}
-
+\end{figure} 
 It's important to note that the output of the convolution operation must be stored in a new image, as we need to use the original image for the next pixels.
 
 \subsection{Smoothing / Enhancement}
+Another type of operation that we can apply to an image is \textbf{smoothing}. 
+
+\subsubsection{Low-pass filter}
+The idea of the low-pass filter is to remove the high-frequency components of the image, 
+consisting of the edges and the fine details, and
+leaving only the low frequency components, which are typically associated with the smooth regions of the image. 
+
+For a $5 \times 5$ low-pass filter, we can define it as follows:
+\begin{equation}
+    I'(c,r) = \frac{1}{25} \sum_{i=-2}^{2} \sum_{j=-2}^{2} I(c+i, r+j)
+\end{equation}
+Each kernel value is equal to $\frac{1}{M \times N}$, where $M$ and $N$ are the dimensions of the kernel.
+This is simply the average of the pixel values in the neighborhood of the pixel we are processing.
+
+Obviously, the bigger the kernel, the stronger the smoothing effect. However, we have to take in consideration that
+the pixel at the edge of the image cannot be processed. For this reason, making the kernel bigger will result in a bigger portion of the image that cannot be processed.
+
+If wanted, we could also design a \textbf{high-pass filter} or a \textbf{band-pass filter}, by combination of filters.
+
+\subsubsection{Gaussian filter}
+The Gaussian filter is a low-pass filter that is defined as follows:
+\begin{equation}
+    G(x,y) = c e^{-\frac{x^2 + y^2}{2\sigma^2}}
+\end{equation}
+Where $c$ is a normalization constant to ensure integer values for the kernel, and $\sigma$ is the standard deviation of the Gaussian distribution, which controls the amount of smoothing.
+This is an \textbf{isotropic} filter, meaning that it has the same values in all directions. This implies that,
+when we apply it to an image, there's no need to compute the rotation of the filter.
+
+The effects of this filter are similar to the ones of the low-pass filter, but instead of taking the average of the pixel values
+in the neighborhood, it takes a weighted average, where the weights are inversely proportional to the distance from the center of the kernel. 
+This means that the pixels closer to the center of the kernel will have a stronger influence on the output pixel value, while the pixels farther away will have a weaker influence.
+
+\subsubsection{Median filtering}
+The median filter is a non-linear filter that is used to remove noise from an image, especially for spike noise.
+If we have noise in the image, applying a low-pass or a Gaussian filter will not be effective, as the mean operator is very sensitive to outliers.
+On the other hand, the median operator is known to be more robust to outliers, thus it is more effective in removing noise from the image.
+
+Instead of taking the average of the pixel values in the neighborhood, the median filter takes the median value of the pixel values in the neighborhood.
+The elements of the neighborhood are sorted in ascending order, and the value in the middle is taken as the output pixel value.
+
+\section{Morphology Filters}
+Morphology operators are a set of non-linear operations used to extract information about the shape of objects in an image.
+They are typically used for different tasks, such as:
+\begin{itemize}
+    \item \textbf{Shape fitting}: Given a shape, check whether it fits inside an object in the image;
+    \item \textbf{Shape extraction}: Given a shape, extract all the objects in the image that have that shape;
+    \item \textbf{Shape analysis}: Check whether a picture has a certain shape; 
+\end{itemize}
+Those operators are typically applied to \textbf{binary images}, where the pixel values are either 0 or 1, given a \textbf{Binary Structuring Element} (BSE),
+which represents the shape that we want to fit, extract or analyze.
+
+Common operators are:
+\begin{itemize}
+    \item \textbf{Erosion}: reduce the area of a certain shape in the image;
+    \item \textbf{Dilation}: increase the area of a certain shape in the image;
+    \item \textbf{Opening}: remove small portions of the image, close to the boundary of relevant areas;
+    \item \textbf{Closing}: fill small holes in the image and makes region boundaries smoother.
+\end{itemize}
+Opening and closing are combinations of erosion and dilation.
+
+\subsubsection*{Dilation}
+The structuring element $S$ is swept over the binary image $B$. As the origin of the structuring element touches a pixel in the image with a value of 1,
+all pixels in the image that are covered by the structuring element are ORed with the value of $B$.
+This basically corresponds to sliding the structuring element over the border of the shape in the image, and adding pixels to it, thus increasing its area.
+
+More formally, the dilation of the foreground of a binary image $B$, with a structuring element $S$ is defined as follows:
+\begin{equation}
+    B \oplus S = \bigcup_{b \in B} S_b
+\end{equation}
+\begin{comment}
+    ADD image of dilation
+\end{comment}
+These operations are usually used to simplify recognition and tracking of objects in an image.
+
+\subsubsection*{Erosion}
+Again, the structuring element $S$ is swept over the binary image $B$. For each position where the structuring element
+is fully contained in the foreground of the image, the pixel in the output image are ORed with the value of $B$.
+
+\subsubsection*{Closing and Opening}
+Closing and opening are combinations of dilation and erosion. They are defined as:
+\begin{itemize}
+    \item \textbf{Closing}: first we apply \textbf{dilation} to the image, and then we apply \textbf{erosion} to the result;
+    \item \textbf{Opening}: first we apply \textbf{erosion} to the image, and then we apply \textbf{dilation} to the result.
+\end{itemize}
