@@ -181,4 +181,59 @@ The model can be expressed as follows:
 \end{equation}
 which can be computed as:
 \[ i = \rho \|n\| \|s\| \cos(\alpha)\]
-where $\rho$ is the albedo of the surface, which represents the fraction of light that is reflected from the surface, and $l$ is the light direction.
+where $\rho$ is the albedo of the surface, which represents the fraction of light that is reflected from the surface.
+
+An element is not visible if $n \cdot s \leq 0$, which means that the surface normal is pointing away from the light source, and thus, the surface point is in shadow.
+
+\subsection{Lenses}
+Up until now, we have assumed that our camera were pinhole cameras, which is not the case in the real world.
+In reality, cameras use \textbf{lenses} to focus light onto the image plane. This means that the objects in the scene are \textbf{on focus}
+if the distance between the camera and the image plane obeys the \texttt{thin lens equation}.
+
+\subsubsection{Thin Lens Equation}
+Using a lens instead of a pinhole means that a wide set of rays of light from the same point $P$ are merged together to the same point $P'$ on the image plane.
+The intensity of each ray of light is summed together, which allows us to capture more light and thus, create a brighter image.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{media/models/thin_lens.png}
+    \caption{Thin Lens model.}
+\end{figure}
+Supposing that we have an object at distance $u$ from the lens, and an image plane at distance $v$ from the lens. Considering the similar triangles formed by the points $P$, $R$, $O$ and $p'$, $S$, $O$, we can derive that:
+\begin{equation*}
+    \frac{X'}{Z'+f} = \frac{X}{Z + f}
+\end{equation*}
+Knowing that $X = f \frac{x'}{Z'}$, we can substitute this into the previous equation to obtain:
+\begin{equation*}
+    \frac{X'}{Z'+f} = f \frac{Z'}{Z'(Z + f)}
+\end{equation*}
+Rearranging the equation, we get:
+\begin{equation*}
+    X' =  f \frac{X'(Z + f)}{Z'(Z + f)}
+\end{equation*}
+We can simplify the $X'$ term on both sides of the equation, which leads to:
+\begin{equation*}
+    Z' (f + Z) = fZ + f^2
+\end{equation*}
+Where $Z = u - f$ and $Z' = v - f$. Substituting these values into the previous equation, we end up with the \texttt{thin lens equation}:
+\begin{equation}
+    \label{eq:thin_lens_equation}
+    \frac{1}{f} = \frac{1}{u} + \frac{1}{v}
+\end{equation}
+This equation describes the relationship between the focal length of the lens, the distance of the object from the lens, and the distance of the image plane from the lens. 
+We can notice that if the object is goes to infinity ($u \rightarrow \infty$), then the image plane is located at the focal length of the lens ($v = f$).
+
+If we move the image plane, the point $P'$ will be projected to a different point on the image plane, which means that the objects in the scene will be out of focus.
+On the other hand, if $P$ is moved, than $u$ also changes, which means that the image plane will need to be moved in order to keep the objects in focus.
+
+\subsubsection{Focus}
+
+
+\subsubsection{Typical Issues}
+If the objects are not on focus, typical issues that arise are:\
+\begin{itemize}
+    \item \textbf{Barrel distortion}: caused by wide-angle lenses, where straight lines appear to curve outward from the center of the image;
+    \item \textbf{Chromatic aberration}: typically related to bad lenses, where different wavelengths are threatened differently, 
+    resulting in color fringing around the edges of objects in the image;
+    \item \textbf{Vignetting}: caused by cheap or dirty lenses, where the corners of the image appear darker than the center due to light falloff.
+\end{itemize}
