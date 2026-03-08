@@ -1,0 +1,25 @@
+\begin{tikzpicture}
+    %Define the z axis
+    \draw[->, thick] (-3,0) -- (3,0) node[right] {$z$};
+    %Define the y axis
+    \draw[->, thick] (0,-2) -- (0,2) node[above] {$y$};
+
+    % Add the point P
+    \filldraw[black] (2.5,1) circle (2pt) node[above right] {$P = (X, Y, Z)$};
+    % Add the point projection P'
+    \filldraw[black] (-1.5,-0.6) circle (2pt) node[below left] {$P' = (X', Y', Z')$};
+    % Add the trajectory of the ray from P to P'
+    \draw[dotted, thick] (2.5,1) -- (-1.5,-0.6);
+
+    % Add the pinhole at the origin c
+    \filldraw[black] (0,0) circle (2pt) node[below right] {$C$};
+
+    % Add the focal length f
+    \draw[dotted, thick] (0,0) -- (-2.5,0) node[midway, above] {$-f$};
+
+    %Add the projections of triangles
+    \draw[dotted, thick] (2.5,1) -- (2.5,0);
+    \draw[dotted, thick] (2.5,0) -- (0,0);
+    \draw[dotted, thick] (-1.5,-0.6) -- (-1.5,0);
+    \draw[dotted, thick] (-1.5,0) -- (0,0);
+\end{tikzpicture}
