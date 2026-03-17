@@ -223,14 +223,113 @@ Where $Z = u - f$ and $Z' = v - f$. Substituting these values into the previous 
 This equation describes the relationship between the focal length of the lens, the distance of the object from the lens, and the distance of the image plane from the lens. 
 We can notice that if the object is goes to infinity ($u \rightarrow \infty$), then the image plane is located at the focal length of the lens ($v = f$).
 
-If we move the image plane, the point $P'$ will be projected to a different point on the image plane, which means that the objects in the scene will be out of focus.
-On the other hand, if $P$ is moved, than $u$ also changes, which means that the image plane will need to be moved in order to keep the objects in focus.
-
 \subsubsection{Focus}
+If we move the image plane (changing $v$), the point $P'$ will be projected to a different point on the image plane, which means that the objects in the scene will be out of focus.
+On the other hand, if $P$ is moved, than $u$ also changes, which means that the image plane will need to be moved in order to keep the objects in focus.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{media/models/focus.png}
+    \caption{Focus and out of focus objects.}
+\end{figure}
+In these cases, instead of a single point $P'$ on the image plane, we will have a \textbf{blur circle} of diameter $b$, 
+which is the area on the image plane where the rays of light from the same point $P$ are projected when they are out of focus.
 
+When capturing an image, we first need to define the acceptable level of blur, which is determined by the size of the blur circle $b$.
+Once this is defined, we can use the thin lens equation to determine the range of distances from the camera where objects will be in focus, which is known as the \textbf{depth of field}.
+
+Using the thin lens equation, we can derive the following formulation for the depth of field, 
+which describes the range of distance for the image plane $v'$ where the objects will be in focus,
+in terms of the object distance $u$, the focal length $f$, and the acceptable blur circle diameter $b$:
+\begin{equation*}
+    \begin{cases}
+        v' = \frac{a + b}{a} v  \\\\
+        v'' = \frac{a - b}{a} v
+    \end{cases}
+\end{equation*}
+The depth of field is then given by the difference between $v'$ and $v''$.
+
+Given this formulation and the value of the acceptable blur circle diameter $b$, we can determine the range of distances from the camera where objects will be in focus.
+This is important for computer vision applications, to ensure that the objects of interest in the scene are captured in focus.
+It is defined as:
+\begin{equation*}
+    \begin{cases}
+        u_n = \frac{u(a+b)}{a+ \frac{bu}{f}} \\\\
+        u_r = \frac{u(a-b)}{a- \frac{bu}{f}}
+    \end{cases}
+\end{equation*}
+
+We can notice that:
+\begin{itemize}
+    \item If $f$ becomes smaller $u_r$ becomes larger, which means that the object can be further away from the camera and still be in focus;
+    \item If $u \rightarrow \infty$ then rays of light from the object are parallel to each other, which means that the image plane is located 
+    at the focal length of the lens ($v = f$), and thus, all objects will be in focus.
+\end{itemize}
+
+\subsubsection{Autofocus}
+Modern cameras use autofocus systems to automatically adjust the position of the image plane in order to keep the objects in focus.
+We can distinguish between two types of autofocus systems:
+\begin{itemize}
+    \item \textbf{Active autofocus}: the camera emits a signal (e.g., infrared light) and measures the time it takes for the signal to bounce back from
+    the objects in the scene, which allows it to estimate the distance of the objects and adjust the focus accordingly. This method faces problems
+    in case of far objects, obstacles or glossy surfaces, which can reflect the signal in unexpected ways.
+    \item \textbf{Passive autofocus}: the camera analyzes the image itself to determine the level of focus, and adjusts the position of the image plane accordingly.
+    Usually, the camera will try to analyze the edges in the image, since they are more affected by blur.
+\end{itemize}
+High quality cameras use a combination of both active and passive autofocus systems to ensure that the objects in the scene are captured in focus, 
+regardless of the distance or lighting conditions.
+
+\subsubsection{Resolution, Blur and Resolving Power}
+A camera with a $N \times M$ pixel sensor can detect at most $\frac{N}{2}$ horizontal lines (one pixel must be left between two lines to distinguish them).
+If the blur is larger than the distance between two lines, then the camera will not be able to distinguish them, leading to a loss of detail in the image.
+
+We define the \textbf{resolving power} of a camera as the maximum number of lines per unit distance that the camera can distinguish, which is given by the formula:
+\begin{equation}
+    R_p = \frac{1}{2\Delta}
+\end{equation}
+where $\Delta$ is the spacing between two lines that the camera can distinguish.
+
+\paragraph{Example}
+Consider a camera sensor of size $36mm \times 24mm$, with a resolution of $4000 \times 2500$ pixels.
+We can calculate the spacing between two lines that the camera can distinguish as follows:
+\begin{equation*}
+    R_p = \frac{1}{2\Delta} \text{where } \Delta = \frac{\text{sensor size}}{\text{resolution}}
+\end{equation*}
+Calculating $\Delta$ for the vertical direction:
+\begin{equation*}
+    \Delta = \frac{24mm}{2500} \approx 0.01mm
+\end{equation*}
+Thus, the resolving power is:
+\begin{equation*}
+    R_p = \frac{1}{2 \times 0.01mm} = 50 \text{ lines/mm}
+\end{equation*}
+This means that the camera can distinguish up to 50 lines per millimeter, which is a measure of the level of detail that the camera can capture in the image.
+
+Assuming we now want to capture an object in the real world. In particular, we have a focal length of $f = 50mm$ and a distance of the object from the camera of $u = 5000mm$. 
+We want to compute the minimum size of the object that can be distinguished by the camera.
+
+First, we can notice that the rays of light from the object are parallel to each other, which means that rays of light coming from adjacent lines have an angle $\theta$
+separating them.
+In order to distinguish between two lines, the spacing between pixel lines must be greater than $2 \Delta$. We can write that:
+\begin{equation*}
+    2 \Delta = f \sin(\theta) \approx f \theta
+\end{equation*}
+Given the focal length $f$, we can calculate the angle $\theta$ as follows:
+\begin{equation*}
+    \theta = \frac{2 \Delta}{f} = \frac{2 \Delta}{50mm} = 0.0004 \text{ radians}
+\end{equation*}
+Now, we can calculate the minimum size of the object that can be distinguished by the camera using the formula:
+\begin{equation*}
+    \text{object size} = u \tan(\theta) \approx u \theta
+\end{equation*}
+Substituting the values, we get:
+\begin{equation*}
+    \text{object size} = 5000mm \times 0.0004 = 2mm
+\end{equation*}
+This means that the camera can distinguish objects that are at least 2mm in size at a distance of 5000mm, given the focal length and resolution of the camera.
 
 \subsubsection{Typical Issues}
-If the objects are not on focus, typical issues that arise are:\
+There are several issues that can arise when using lenses, which can affect the quality of the image and the performance of computer vision algorithms. 
+Some of these issues include:
 \begin{itemize}
     \item \textbf{Barrel distortion}: caused by wide-angle lenses, where straight lines appear to curve outward from the center of the image;
     \item \textbf{Chromatic aberration}: typically related to bad lenses, where different wavelengths are threatened differently, 
