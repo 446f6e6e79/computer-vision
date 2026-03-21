@@ -212,3 +212,91 @@ Where $\alpha$ is a parameter that controls the update rate of the background mo
 \end{itemize}
 
 \subsubsection{Gaussian Average}
+Instead of relying on a single background model, we can use a Gaussian Model to represent the background.
+In this approach, we model the background as a Gaussian distribution, and we update the parameters of the distribution over time,
+with the same approach of the adaptive background subtraction. 
+
+We can formalize the Gaussian model as follows:
+\begin{equation}
+    \label{eq:gaussian_update}
+    \mu_t = \alpha I_t + (1 - \alpha) \mu_{t-1}
+\end{equation}
+This model can adapt to changes in the background and to changes in the illumination,
+by "absorbing" the changes in the background into the parameters of the Gaussian distribution.
+The speed of adaptation is controlled by the parameter $\alpha$, as in the adaptive background subtraction approach.
+
+This model allows recognizing the moving objects in the scene, even in case of dynamic backgrounds.
+We can instead say that a pixel belongs to the foreground if the intensity value of the pixel is far from the mean of the Gaussian distribution, by a certain threshold:
+\begin{equation}
+    |I_t - \mu_t| > k \sigma_t
+\end{equation}
+Where $k$ is the threshold parameter, and $\sigma_t$ is the standard deviation of the Gaussian distribution at time $t$.
+
+Even though the model is constantly updated, usually an initialization phase is required, in which the background model is learned from a sequence of frames. This allows to have a more accurate
+representation of the background, and to reduce the number of false positives in the motion detection.
+
+\subsubsection{Improving the Gaussian Average}
+From the equation \ref{eq:gaussian_update} of the Gaussian average, we can see that the update of the mean is based on both
+background and foreground pixels, with no distinction between them.
+
+To avoid foreground pixels to affect the update of the background model, we can use a \textbf{selective update} approach,
+in which only the pixels that are classified as background are used to update the background model. This can be formalized as:
+\begin{equation}
+    \mu_t = M\mu_{t-1} + (1 - M)(\alpha I_t + (1 - \alpha) \mu_{t-1})
+\end{equation}
+Where $M$ is a binary mask that indicates which pixels are classified as background (1) and which pixels are classified as foreground (0).
+If the pixel is classified as foreground, the background model is not updated at all, while if the pixel is classified as background, 
+the background model is updated as in the Gaussian average approach.
+
+\subsubsection{Mixture of Gaussian}
+There are cases in which a single Gaussian distribution is not enough to model the background. For example,
+in case of rain, snow, or waving trees, the background can have multiple modes, and a single Gaussian distribution is not able to capture all the variations in the background.
+These are known as multimodal backgrounds, and they require a more complex model to be able to capture all the variations in the background.
+
+In this case, we can use a mixture of Gaussian distributions to model the background.
+In particular, we can model the background as a mixture of $K$ Gaussian distributions, where each distribution represents a different mode of the background.
+More formally, we can define the mixture of Gaussian model as:
+\begin{equation}
+    P(X_t) = \sum_{i=1}^{K} w_{i,t} \mathcal{N}(X_t | \mu_i, \Sigma_i)
+\end{equation}
+Where:
+\begin{itemize}
+    \item $P(X_t)$ is the probability of the pixel intensity $X_t$ at time $t$;
+    \item $w_{i,t}$ is the weight of the $i$-th Gaussian distribution at time $t$, which represents the importance of the $i$-th mode of the background at time $t$;
+    \item $\mathcal{N}(X_t | \mu_i, \Sigma_i)$ is the Gaussian distribution with mean $\mu_i$ and covariance $\Sigma_i$.
+\end{itemize}
+By assuming that each color channel is independent, we can simplify the model by using a diagonal covariance matrix, which reduces the number of parameters to be estimated.
+
+\paragraph{Identify each Distribution}
+Once we have defined the $K$ Gaussian distributions, we need to rank them based on their weights $w_{i,t}$, amplitude and standard deviation, to determine which distributions represent the background and which distributions represent the foreground.
+Usually, the distributions with the highest weights and lowest standard deviation are considered as background distributions, while the distributions with the lowest weights and highest standard deviation are considered as foreground distributions.
+Formally, the first $B$ distributions that satisfy the following condition are considered as background distributions:
+\begin{equation}
+    \sum_{i=1}^{B} w_{i,t} > T
+\end{equation}
+Where $T$ is a threshold parameter that controls the sensitivity of the model to changes in the background.
+
+\paragraph{Point classification}
+Given the mixture of Gaussian model, we can check each pixel intensity $X_t$ against the distributions:
+\begin{itemize}
+    \item If $X_t$ matches one of distributions, it is classified accodingly.
+    $X_t$ is said to match a distribution if the distance between $X_t$ and the mean of the distribution is less than a certain threshold:
+    \begin{equation*}
+        |X_t - \mu_i| < k \sigma_i
+    \end{equation*}
+    \item If $X_t$ does not match any of the distributions, the distribution with the lowest weight is replaced
+    with a new distribution with mean equal to $X_t$, high standard deviation, and low weight.
+\end{itemize}
+
+\paragraph{Update Model parameters}
+Also in this case, the parameters of the model are updated over time, to adapt to changes in the background and to changes in the illumination.
+In particular, we are interested in updating the weights of the distributions, since the means and the standard deviations are updated just as in the 
+Gaussian average approach, but only for the distribution that matches the pixel intensity $X_t$.
+
+The update of the weights can be formalized as:
+\begin{equation}
+    w_{i,t} = (1 - \alpha) w_{i,t-1} + \alpha M
+\end{equation}
+Where $M$ is a binary variable that indicates whether the distribution matches the pixel intensity $X_t$ (1 if it matches, 0 otherwise).
+This update allows to increase the weight of the distribution that matches the pixel intensity $X_t$, 
+and to decrease the weight of the distributions that do not match the pixel intensity $X_t$.
