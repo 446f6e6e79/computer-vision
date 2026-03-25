@@ -1,0 +1,161 @@
+\section{Motion Tracking}
+While motion detection identifies the presence of movement, \textbf{motion tracking} aims to 
+follow specific objects across consecutive frames. 
+This process involves establishing temporal correspondence by associating detected entities in the current 
+frame with their instances in subsequent frames.
+
+Motion tracking is essential across various domains, including:
+\begin{itemize}
+    \item \textbf{People monitoring:} analyzing crowd dynamics or tracking a specific individual;
+    \item \textbf{Vehicle tracking:} monitoring the movement of vehicles in traffic surveillance;
+    \item \textbf{Biological applications:} tracking the movement of animals or cells in scientific research;
+\end{itemize}
+
+The primary objective is often \textbf{object tracking}, which maintains the persistent identity of a target over time. 
+Depending on the application, tracking can be performed in different dimensionalities:
+\begin{itemize}
+\item Tracking 2D coordinates in the image plane (e.g., using bounding boxes or centroids);
+\item Tracking 3D coordinates in real-world space (requires multiple cameras or depth sensors);
+\item Determining the pose or articulation of complex objects, such as human skeletal tracking.
+\end{itemize}
+
+\subsection{2D Tracking Methodologies}
+In scenes with a single moving object, tracking can often be achieved by simply following the object's centroid. 
+However, multi-object scenarios require sophisticated association algorithms to prevent identity switches. 
+Common 2D tracking approaches include:
+\begin{itemize}
+    \item \textbf{Region-based:} Associating areas based on global features like color or texture.
+    \item \textbf{Contour-based:} Following the evolving boundary or "snake" of an object.
+    \item \textbf{Feature-based:} Tracking distinct interest points, such as Harris corners or SIFT features.
+    \item \textbf{Template-based:} Matching a predefined visual patch of the target across frames.
+\end{itemize}
+
+\subsection{Region-Based Tracking}
+Region-based tracking follows image patches with a \textbf{uniform appearance}. 
+This method is computationally efficient and well-suited for real-time systems, providing a robust balance
+between speed and discriminative power.
+
+The standard implementation utilizes a \textbf{color histogram} as a visual signature. 
+The workflow typically involves:
+\begin{enumerate}
+    \item Segmenting the region of interest (ROI) from the background.
+    \item Computing the color distribution (histogram) of the ROI.
+    \item Searching for the most similar histogram in the subsequent frame to locate the object.
+\end{enumerate}
+
+While effective for targets with distinctive colors, this approach is sensitive to illumination changes. 
+To mitigate this, practitioners often employ the \textbf{HSV color space} (which separates luminance from chromaticity) 
+or implement \textbf{dynamic model updates} to adapt the histogram over time.
+
+\subsubsection{Part-Based Models}
+A single global histogram may fail when tracking complex, non-rigid objects like humans. 
+\textbf{Part-based models} decompose the object into several sub-regions (e.g., head, torso, and legs), 
+each with its own local histogram.
+
+This decomposition provides two major advantages:
+\begin{itemize}
+    \item \textbf{Robustness to Occlusion:} If the legs are hidden by an obstacle, 
+    the system can maintain the track using the head and torso signatures.
+    \item \textbf{Spatial Verification:} It prevents confusion between objects with similar colors but different 
+    configurations. Take in consideration the case of two people, one wearing a white shirt and black pants, 
+    and the other wearing a black shirt and white pants. A global histogram might struggle to differentiate them, 
+    but a part-based model can leverage the spatial arrangement of colors to maintain accurate tracking.
+\end{itemize}
+
+\subsubsection{Implementation and Similarity Metrics}
+The tracking process evaluates the similarity between the \textbf{tracked model} ($O^t$) 
+in the current frame and a stored \textbf{reference model} ($O^r$). 
+
+Common metrics for histogram comparison include:
+\begin{itemize}
+    \item \textbf{Histogram Intersection:} Measures the commonality between two distributions.
+    \[ \cap (O^t, O^r) = \sum_{n=1}^{U} \min(O^t_{n}, O^r_{n}) \]
+    \item \textbf{Sum of Squared Differences (SSD):} Measures the Euclidean distance between histogram bins.
+    \[ SSD(O^t, O^r) = \sum_{n=1}^{U} (O^t_{n} - O^r_{n})^2 \]
+\end{itemize}
+To improve robustness, bins typically represent color ranges rather than individual 
+values to account for sensor noise and minor lighting fluctuations.
+
+\subsubsection{Addressing Environmental Noise: Shadows}
+Shadows represent a significant challenge in region-based tracking because 
+they alter the pixel values of the background, often leading to false positives in motion detection. 
+
+To prevent a shadow from being tracked as a separate entity or distorting the object's histogram, 
+we assume that a shadow primarily reduces \textbf{brightness} while leaving \textbf{chromaticity} (Hue and Saturation) relatively intact. 
+By performing tracking in the HSV space and ignoring the Value ($V$) component, 
+the system can become significantly more shadow-invariant, improving the robustness of the tracking process in outdoor 
+environments or scenes with variable lighting conditions.
+
+\subsubsection{Blob Extraction and Post-Processing}
+Following motion detection, the resulting binary masks often contain "noise"—fragmented regions, 
+isolated pixels, or holes within moving objects caused by imperfect segmentation. 
+To transform these raw pixels into actionable data, we perform \textbf{blob extraction} (also known as Connected Component Labeling).
+
+This process aggregates neighboring foreground pixels into coherent, 
+labeled regions called \textbf{blobs}, which represent the physical objects in the scene. 
+To ensure these blobs accurately reflect the geometry of the targets, the extraction process typically involves the following refinement steps:
+\begin{itemize}
+    \item \textbf{Morphological Filtering:} Applying \textit{erosion} to remove isolated noise (small pixel clusters) and \textit{dilation} to bridge gaps and fill internal holes within an object.
+    \item \textbf{Connectivity Analysis:} Grouping pixels based on 4-way or 8-way adjacency to assign a unique ID to each spatially distinct moving entity.
+    \item \textbf{Feature Extraction:} Once a blob is defined, we calculate its geometric properties, such as the \textbf{centroid}, \textbf{bounding box}, \textbf{area}, and \textbf{aspect ratio}.
+\end{itemize}
+By filtering out blobs that are too small to be objects of interest, we provide the downstream tracking algorithms with a clean, high-level representation of the scene.
+
+\subsubsection{Target Association}
+Once we have the blobs representing the detected objects, we need to associate them across consecutive frames to maintain the identity of each object over time.
+This process is known as \textbf{target association} and is actually common to all tracking methods, not just region-based ones.
+
+In general, detection is not carried out on a frame-by-frame basis, but rather on a \textbf{temporal window} of frames, since it can
+be demanding in terms of computational resources. 
+This means that the tracking algorithm must be able to handle cases where an object is not detected in every single frame, which adds complexity to the association process.
+
+Correspondence is typically achieved through \textbf{data association algorithms} that match the detected blobs based on their spatial proximity and appearance features.
+Such methods rely on the \textbf{optical flow} assumption, which states that the motion of objects between frames is small enough to allow for reliable matching based on their positions and appearances. 
+It's important to keep in mind that cameras and frame rates must be chosen to satisfy this assumption, as large displacements can lead to tracking failures.
+
+Different approaches to target association include:
+\begin{itemize}
+    \item \textbf{Nearest Neighbor:} Assigning each detected blob to the closest track based on spatial distance between centroids;
+    \item \textbf{Overlapping:} Matching blobs based on the degree of overlap between their bounding boxes. 
+    This has issues with scale changes;
+    \item \textbf{Bounding Box - Overlap:} Similar to the previous method, but consider the bounding box of the track instead of the blob.
+\end{itemize}
+There are no best practices for target association, and the choice of method depends on the specific application and the characteristics of the scene being analyzed.
+
+\subsubsection{Splitting and Merging}
+Very similar but distinct problems that can arise during tracking are \textbf{splitting} and \textbf{merging}.
+
+\paragraph{Splitting}
+When multiple blobs are present in the same frame, we might encounter one of two problematic scenarios:
+\begin{enumerate}
+    \item \textbf{Single object - multiple blobs:} this occurs when an object is fragmented into several blobs due to imperfect segmentation.
+    \item \textbf{Multiple objects - single blob:} this happens when two or more objects are merged into a single blob, often due to occlusion or proximity.
+\end{enumerate}
+These 2 situations are different faces of the same problem, which is called \textbf{splitting}. 
+\begin{comment}
+    #TODO: insert image here for example 1 and 2 from slides
+\end{comment}
+Before understanding which of the two cases we are facing, evidence need to be collected over a temporal window of frames.
+This way, we can analyze the behavior of the blobs over time to determine whether they represent a single object or multiple objects.
+
+\paragraph{Merging}
+On the other hand, \textbf{merging} occurs when multiple objects are detected as a single blob, due to proximity or occlusion.
+An example of this is when a person which is entering a scene. Initially, feet and arms might be detected as separate blobs.
+As the person moves further into the scene, these blobs might merge into a single blob representing the whole body.
+\begin{comment}
+    #TODO: insert image here for example of merging from slides
+\end{comment}
+
+In both cases, its required to analyze the temporal evolution of the blobs to determine whether they represent a single object or multiple 
+objects, and to adjust the tracking accordingly.
+
+\subsubsection{Occlusion}
+Moving object can be partially or fully occluded by each other when they are in close proximity.
+This can lead to tracking failures, as one object disappears from the scene, and bigger blobs may appear, which
+might have no resemblance to the original objects.
+
+This is something that need to be handled before the occlusion occurs, by analyzing the proximity 
+of the objects and predicting potential occlusions. 
+
+Usually, the system suspends the tracking of the involved objects during the occlusion, and then re-identifies
+them once they reappear as separate entities in the scene.
