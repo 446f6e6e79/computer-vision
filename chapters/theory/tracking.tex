@@ -68,11 +68,20 @@ in the current frame and a stored \textbf{reference model} ($O^r$).
 
 Common metrics for histogram comparison include:
 \begin{itemize}
-    \item \textbf{Histogram Intersection:} Measures the commonality between two distributions.
+    \item \textbf{Histogram Intersection:} Measures the correlation between two distributions.
     \[ \cap (O^t, O^r) = \sum_{n=1}^{U} \min(O^t_{n}, O^r_{n}) \]
+    This simply returns the area of the intersection of the two histograms, which is a measure of their similarity.
     \item \textbf{Sum of Squared Differences (SSD):} Measures the Euclidean distance between histogram bins.
     \[ SSD(O^t, O^r) = \sum_{n=1}^{U} (O^t_{n} - O^r_{n})^2 \]
+    This instead returns the area of the difference between the two histograms, which is a measure of their dissimilarity.
 \end{itemize}
+\begin{comment}
+    #TODO: insert image here of histogram comparison from the lesson
+    1st method takes the minimum value of each corresponding bin and sums them up, giving as a result the area
+    of the intersection of the two histograms. 
+    2nd method takes the difference of each corresponding bin, squares it, and sums them up, giving as a result the area
+    of the difference between the two histograms.
+\end{comment}
 To improve robustness, bins typically represent color ranges rather than individual 
 values to account for sensor noise and minor lighting fluctuations.
 
