@@ -168,3 +168,44 @@ of the objects and predicting potential occlusions.
 
 Usually, the system suspends the tracking of the involved objects during the occlusion, and then re-identifies
 them once they reappear as separate entities in the scene.
+
+\subsection{Feature Based Tracking}
+The idea behind feature-based tracking is to replace the information carried by the histogram of the whole object 
+with a set of distinctive local \textbf{features}, extracted from the object itself.
+These features are typically points of interest, such as corners, edges, or blobs, that can be reliably detected and tracked across frames.
+
+Considering a set of images $A = \{I_1, I_2, ..., I_n\}$, we can extract a set of features $F_i$ from each image $I_i$.
+The position of each feature in a given image can be represented as a vector of coordinates $f_i(x_i, y_i)$.
+The objective of feature-based tracking is to determine the displacement vector $d_i = (dx_i, dy_i)$ that best estimates the movement of
+feature $f_i$ from one frame to the next, such that:
+\[ f_{i+1}(x_i + dx_i, y_i + dy_i) \]
+
+\subsubsection{Good Features to Track}
+Not all features are equally suitable for tracking. 
+The \textbf{Good Features to Track} algorithm identifies features that are likely to be stable and distinctive across frames, making them ideal candidates for tracking.
+This method is based on the concept of \textbf{corner detection}, which identifies points in the image where the intensity changes significantly in multiple directions.
+
+For each pixel in the image $p(x, y)$ we compute the \textbf{structure tensor} $Z$:
+\[ Z = \begin{bmatrix}
+    \sum_{W} J_x^2 & \sum_{W} J_x J_y \\
+    \sum_{W} J_x J_y & \sum_{W} J_y^2
+\end{bmatrix} \]
+where $J_x$ and $J_y$ are the gradients of the image in the x and y directions, respectively, 
+and the summation is performed over a window $W$ centered around the pixel $p$.
+
+The eigenvalues of the structure tensor, $\lambda_1$ and $\lambda_2$, provide a measure of the local intensity variation around the pixel.
+A pixel is considered a good feature to track if the smallest eigenvalue $\lambda_{min} = \min(\lambda_1, \lambda_2)$ is above a certain threshold, 
+indicating that changes are in multiple directions, which is characteristic of corners.
+
+\subsubsection{Tracking Features}
+Once we have identified the good features to track, we need to track their movement across frames.
+Ideally, we would expect that the position of a feature in the next frame can be predicted by adding a displacement vector to its current position:
+\[ I_i(Df - d) = I_{i+1}(f) \]
+where $I_i, I_{i+1}$ are successive frames, $f$ is the position of the feature in the current frame, $D$ is the deformation matrix 
+and $d$ is the displacement vector we want to estimate.
+
+However, due to the noise, the equality does not hold perfectly. Assuming that the motion between frames is small, 
+we can use a translational model to approximate the movement of the feature, which simplifies the problem to 
+finding the displacement vector $d$ that minimizes the difference between the two images:
+\[ \epsilon = \int \int_{W} [I_i(f - d) -  I_{i+1}(f)]^2 \omega(f) \; df \]
+The value of $d$ that minimizes this error can be found by simply taking the derivative of $\epsilon$ with respect to $d$ and setting it to zero.
