@@ -2,11 +2,11 @@
 A detailed collection of LaTeX-based lecture notes for the Computer Vision course at the University of Trento, academic year 2025/2026, instructed by Prof. Nicola Conci.
 
 <div align="center">
-    <a href="notes.pdf">
+    <a href="LaTeX/main.pdf">
         <img src="media/preview.png" alt="Notes Preview" width="300px">
     </a>
     <br>
-    <a href="notes.pdf" style="display: block; margin-top: 10px; font-size: 15px; font-weight: bold; color: #007acc;">
+    <a href="LaTeX/main.pdf" style="display: block; margin-top: 10px; font-size: 15px; font-weight: bold; color: #007acc;">
     Download the PDF notes</a>
 </div>
 
@@ -30,8 +30,8 @@ Contributions are welcome! Here's how you can help:
 ###  Pull Requests
 1. **Fork** this repository.
 2. Create a new branch: `git checkout -b fix/your-description`.
-3. Make your changes (edit the `.tex` files under `sections/`).
-4. Make sure the project **compiles without errors**: `latexmk -pdf main.tex`.
+3. Make your changes (edit the `.tex` files under `LaTeX/`).
+4. Make sure the project **compiles without errors**: `latexmk -pdf LaTeX/main.tex`.
 5. **Commit** with a descriptive message and **push** your branch.
 6. Open a **Pull Request** against `main`.
 

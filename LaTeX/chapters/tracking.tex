@@ -238,7 +238,7 @@ where each level of the pyramid corresponds to a different resolution.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{media/tracking/pyramidal-implementation.png}
+    \includegraphics[width=0.5\textwidth]{../media/tracking/pyramidal-implementation.png}
     \caption{Pyramidal implementation of the Lucas-Kanade method.}
 \end{figure}
 
@@ -427,5 +427,9 @@ Even though the EKF can handle non-linear systems, it still relies on the assump
 which may not always hold in real-world tracking scenarios.
 
 The \textbf{Particle Filter} is a more general approach that can handle non-linear and non-Gaussian systems.
-This is done by representing the set of possible alternative states of the system as a collection of samples, 
-each one weighted by its likelihood given the observations.
+This is done by representing the set of possible alternative states of the system as a collection of samples, called \textbf{particles}, rather than a single state estimate with an associated covariance.
+Each particle represents a possible state of the system, and is associated with a weight that reflects the
+likelihood of that state given the observations.
+
+The higher the number of particles, the closer our approximation will be to the true posterior distribution, but this also increases the computational cost of the algorithm.
+

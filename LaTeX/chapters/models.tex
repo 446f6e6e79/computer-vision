@@ -8,7 +8,7 @@ The first model we will discuss is the \textbf{pinhole camera model}, which rela
 It assumes that an object in the real world emits light rays that pass through a small hole (the pinhole) and project onto an image plane.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{media/models/pinhole-camera-model.png}
+    \includegraphics[width=0.5\textwidth]{../media/models/pinhole-camera-model.png}
     \caption{Pinhole Camera Model}
 \end{figure}
 We want to make sure that only a single ray of light from each point passes through the pinhole (ideally, it should be a point), which allows us to create a clear image on the image plane.
@@ -19,7 +19,7 @@ between the pinhole and the image plane (also known as the \textbf{focal length}
 
 \begin{minipage}{0.45\textwidth}
     \centering
-    \includegraphics[width=\textwidth]{media/models/projection.png}
+    \includegraphics[width=\textwidth]{../media/models/projection.png}
     \captionof{figure}{Projection of the point $P$ onto the image plane}
 \end{minipage}
 \hfill
@@ -129,7 +129,7 @@ In the orthographic projection, we assume that all the rays of light from the ob
 This means that the size of the object in the image does not change with distance, and there is no perspective distortion.
 \begin{figure}[H]
     \centering
-        \includegraphics[width=0.5\textwidth]{media/models/orthographic-projection.png}
+        \includegraphics[width=0.5\textwidth]{../media/models/orthographic-projection.png}
         \caption{Orthographic Projection model.}
 \end{figure}
 This assumption is valid when the distance between the camera and the objects in the scene is much larger than the depth of the scene, which is often the case in applications such as satellite imaging or architectural drawings.
@@ -196,7 +196,7 @@ The intensity of each ray of light is summed together, which allows us to captur
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{media/models/thin_lens.png}
+    \includegraphics[width=0.5\textwidth]{../media/models/thin_lens.png}
     \caption{Thin Lens model.}
 \end{figure}
 Supposing that we have an object at distance $u$ from the lens, and an image plane at distance $v$ from the lens. Considering the similar triangles formed by the points $P$, $R$, $O$ and $p'$, $S$, $O$, we can derive that:
@@ -228,7 +228,7 @@ If we move the image plane (changing $v$), the point $P'$ will be projected to a
 On the other hand, if $P$ is moved, than $u$ also changes, which means that the image plane will need to be moved in order to keep the objects in focus.
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.5\textwidth]{media/models/focus.png}
+    \includegraphics[width=0.5\textwidth]{../media/models/focus.png}
     \caption{Focus and out of focus objects.}
 \end{figure}
 In these cases, instead of a single point $P'$ on the image plane, we will have a \textbf{blur circle} of diameter $b$, 

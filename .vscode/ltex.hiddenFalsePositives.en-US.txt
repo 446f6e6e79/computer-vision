@@ -1,2 +1,0 @@
-{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QLambertian Surfaces.\\E$"}
-{"rule":"MORFOLOGIK_RULE_EN_US","sentence":"^\\QThis is done by computing the Jacobian matrices of\\E$"}
