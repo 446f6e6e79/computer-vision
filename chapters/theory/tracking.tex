@@ -397,20 +397,35 @@ Where:
 \end{itemize}
 
 \subsubsection{The Recursive Stages}
-The filter iterates through the following equations to propagate the state estimate $\hat{x}$ 
-and the error covariance matrix $P$:
+The filter iterates through the following equations to propagate the state estimate $\hat{x}_t$ 
+and the error covariance matrix $P_t$:
+
 \paragraph{1. Prediction}
-Project the state and uncertainty forward, discarding the optional control input for simplicity:
-\[ \hat{x}_k^- = A_k \hat{x}_{k-1} \]
-Once we have the predicted state, we also need to predict the error covariance matrix, which represents the uncertainty of our state estimate:
-\[ P_k^- = A_k P_{k-1} A_k^T + Q_k \]
+Project the state and uncertainty forward, computing the prior state estimate $\hat{x}_t^-$ 
+and its associated error covariance $P_t^-$:
+\[ \hat{x}_t^- = A_t \hat{x}_{t-1} + B_t u_t \]
+\[ P_t^- = A_t P_{t-1} A_t^T + Q_t \]
 
 \paragraph{2. Update}
-The update step incorporates the new measurement $z_k$ to refine the state estimate and reduce uncertainty.
-In particular, we compute the Kalman Gain $K_k$, which determines how much we should trust the new measurement relative to our current state estimate. 
-Then, we update the state estimate $\hat{x}_k$ and the error covariance matrix $P_k$ accordingly:
+Once the new observation $z_t$ is available, we compute the Kalman Gain $K_t$, update the state estimate $\hat{x}_t$,
+and refine the error covariance $P_t$:
 \begin{itemize}
-    \item \textbf{Kalman Gain:} $K_k = P_k^- H_k^T (H_k P_k^- H_k^T + R_k)^{-1}$
-    \item \textbf{State Update:} $\hat{x}_k = \hat{x}_k^- + K_k (z_k - H_k \hat{x}_k^-)$
-    \item \textbf{Covariance Update:} $P_k = (I - K_k H_k) P_k^-$
+    \item \textbf{Kalman Gain:} $K_t = P_t^- H_t^T (H_t P_t^- H_t^T + R_t)^{-1}$
+    \item \textbf{State Update:} $\hat{x}_t = \hat{x}_t^- + K_t (z_t - H_t \hat{x}_t^-)$
+    \item \textbf{Covariance Update:} $P_t = (I - K_t H_t) P_t^-$
 \end{itemize}
+
+\subsubsection{Extended Kalman Filter}
+In the case of non-linear systems, the standard Kalman Filter is not applicable, since it relies on linearity assumptions.
+In object tracking scenarios, we often encounter non-linear dynamics and measurement models, which necessitate the use of the \textbf{Extended Kalman Filter} (EKF).
+
+The EKF linearizes the non-linear functions around the current state estimate, allowing us to apply the Kalman Filter framework to non-linear problems.
+This is done by computing the \textbf{Jacobian matrices} of the state transition and observation functions, which serve as linear approximations of the non-linear models.
+
+\subsection{Particle Filter}
+Even though the EKF can handle non-linear systems, it still relies on the assumption of the optical flow and of Gaussian noise, 
+which may not always hold in real-world tracking scenarios.
+
+The \textbf{Particle Filter} is a more general approach that can handle non-linear and non-Gaussian systems.
+This is done by representing the set of possible alternative states of the system as a collection of samples, 
+each one weighted by its likelihood given the observations.
