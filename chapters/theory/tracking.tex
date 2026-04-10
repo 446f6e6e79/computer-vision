@@ -209,3 +209,208 @@ we can use a translational model to approximate the movement of the feature, whi
 finding the displacement vector $d$ that minimizes the difference between the two images:
 \[ \epsilon = \int \int_{W} [I_i(f - d) -  I_{i+1}(f)]^2 \omega(f) \; df \]
 The value of $d$ that minimizes this error can be found by simply taking the derivative of $\epsilon$ with respect to $d$ and setting it to zero.
+
+\subsection{Lucas-Kanade Optical Flow}
+The Lucas-Kanade method is an improvement over the basic feature tracking approach.
+It uses a two-frame differential method to estimate the optical flow, which is the apparent motion of brightness patterns in the image.
+
+Consider $u = (u_x, u_y)$ in frame $I_i$ and $v = (v_x, v_y)$ in frame $I_{i+1}$. The goal is to find the displacement vector $d$ such that:
+\[ v = u + d \]
+Where d is the vector that minimizes:
+\[ \epsilon(d) = \epsilon(d_x, d_y) = \sum_{x = u_x - \gamma_x}^{u_x + \gamma_x} \sum_{y = u_y - \gamma_y}^{u_y + \gamma_y} [I_i(x, y) - I_{i+1}(x + d_x, y + d_y)]^2 \]
+Where $\gamma$ is the size of the window around the feature point that we are considering for tracking.
+
+The strong point of the Lucas-Kanade method comes from its pyramidal implementation, which allows it to handle larger displacements by creating a multiscale representation of the image.
+
+\subsubsection{Pyramidal implementation}
+The two key components of any feature tracker are \textbf{accuracy} and \textbf{robustness}.
+\begin{itemize}
+    \item \textbf{Accuracy:} relates to the ability to recreate as perfectly as possible the motion of the feature. 
+    Usually, a smaller window size $\gamma$ is preferable to increase accuracy, since it focuses on a smaller area around the feature point.
+    \item \textbf{Robustness:} relates to the sensitivity of the tracking algorithm to big displacements. 
+    Usually, a larger window size $\gamma$ is preferable to increase robustness.
+\end{itemize}
+We can notice that the two objectives are in conflict with each other, 
+since increasing the window size to improve robustness will decrease accuracy in detecting small movements, and vice versa.
+
+The pyramidal implementation of the Lucas-Kanade method addresses this trade-off by creating a multiscale representation of the image, 
+where each level of the pyramid corresponds to a different resolution.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{media/tracking/pyramidal-implementation.png}
+    \caption{Pyramidal implementation of the Lucas-Kanade method.}
+\end{figure}
+
+We have that:
+\begin{itemize}
+    \item At level 0, we have the original image with the highest resolution, which allows for accurate tracking of small movements;
+    \item At higher levels, we have downsampled versions of the image. Due to the reduced resolution, bigger movements are now represented as smaller pixel displacements,
+    allowing for more robust tracking of larger movements.
+\end{itemize}
+The $L$-th level of the pyramid is defined as a linear combination of the elements of the previous level, with more weight given to the central pixels
+and less weight given to the peripheral pixels.
+\[ I^L(x, y) = \frac{1}{4} I^{L-1}(2x, 2y) + \frac{1}{8} I^{L-1}(2x + 1, 2y) + \frac{1}{8} I^{L-1}(2x, 2y + 1) + \frac{1}{16} I^{L-1}(2x + 1, 2y + 1) \]
+
+At each level of the pyramid, the Lucas-Kanade method is applied to estimate the displacement vector $d$ for the features.
+The estimated displacement is then refined by propagating it down the pyramid:
+\[ d^{L-1} = 2(d^L + \delta^{L}) \] 
+Where:
+\begin{itemize}
+    \item $d^L$ is the displacement estimated at level $L$. It is multiplied by 2 to account for the fact that the resolution at level $L$ is half of the resolution at level $L-1$, 
+    so the displacement needs to be scaled accordingly.
+    \item $\delta^{L}$ is the correction term computed at level $L$ to fine-tune the estimate.
+\end{itemize}
+
+\subsection{Bayesian Tracking}
+Bayesian tracking is a probabilistic approach to motion tracking that models the uncertainty in the tracking process. 
+It tries to estimate the state of the system over discrete time steps, given a sequence of observations.
+
+\paragraph{State}
+\label{bayesian-tracking:state}
+The state of the system at time $t$ is represented by a random variable $X_t$, which includes information about the position, velocity, 
+and acceleration along each axis of the tracked object.
+It can be represented as a function of the previous state and a process noise term:
+\[ X_t = f_t(X_{t-1}, w_{t-1}) \]
+Where:
+\begin{itemize}
+    \item $f_t$ is the non-linear state transition function that models how the state evolves over time;
+    \item $w_{t-1}$ is the process noise, representing the uncertainty in the state transition;
+    \item $X_{t-1}$ is the state of the system at the previous time step.
+\end{itemize}
+Take as example the case of a person walking in a scene. If no noise is involved, the state transition function $f_t$ would simply 
+predict the next position of the person based on their current velocity and direction of movement. Instead, we need to account for the fact
+that the person's movement might not be perfectly predictable, and that there might be external factors that can affect their trajectory (noise).
+
+\paragraph{Observation}
+\label{bayesian-tracking:observation}
+The observations at time $t$ are represented by another random variable $Z_t$, which includes the measurements obtained from the sensors.
+It can be represented as a function of the current state and an observation noise term:
+\[ Z_t = h_t(X_t, v_t) \]
+Where:
+\begin{itemize}
+    \item $h_t$ is the non-linear observation function that models how the state is transformed into observations;
+    \item $v_t$ is the observation noise, generated by the sensors and the environment;
+    \item $X_t$ is the state of the system at the current time step.
+\end{itemize}
+
+\subsubsection{How it works}
+The Bayesian tracking algorithm is a recursive filter that updates the system's state estimate whenever a 
+new observation $Z_t$ is recorded. It refines the predicted state $X_t$ by correcting it with the new measurement.
+
+The process begins with an initial probability distribution, or \textbf{prior}, $p(X_0)$, 
+representing the baseline knowledge of the system. 
+
+The objective is to compute the \textbf{posterior distribution} $p(X_t | Z_{t})$, which represents the updated belief of the state at time 
+$t$ given all the measurements up to that point.
+
+The estimation cycle consists of two main steps:
+\begin{enumerate}
+    \item \textbf{Prediction:} predict the next state based on the previous state and the state transition model, 
+    resulting in a prior distribution (not based on the observation) for the current time step.
+    \item \textbf{Update:} refine the predicted state using the new observation and the observation model, 
+    resulting in the posterior distribution (based on the observation) for the current time step.
+\end{enumerate}
+
+\paragraph{Prediction Step}
+Using the state transition function from \ref{bayesian-tracking:state}, the evolution of the system can be described by the conditional probability distribution:
+\[ p(X_t | X_{t-1}) \]
+which models the likelihood of transitioning from state $X_{t-1}$ to state $X_t$.
+
+Using the observation function from \ref{bayesian-tracking:observation}, the likelihood of observing the measurement $Z_t$, 
+given the current state $X_t$ can be expressed as:
+\[ p(Z_t | X_t) \]
+
+To predict the state at time $t$, the algorithm propagates the posterior probability, obtained from the previous time step 
+$p(X_{t-1} | Z_{1:t-1})$ forward.
+This results in the \textbf{prior distribution} for the current time step, which is computed by marginalizing 
+over all possible previous states:
+\[ p(X_t | Z_{t-1}) = \int p(X_t | X_{t-1}) p(X_{t-1} | Z_{t-1}) dX_{t-1} \]
+
+\paragraph{Update Step}
+When the new observation $Z_t$ becomes available, the likelihood $p(Z_t | X_t)$ is derived from the observation model in \ref{bayesian-tracking:observation}.
+
+The prediction is then updated using Bayes' rule to obtain the new posterior:
+\[ p(X_t | Z_{t}) = \frac{p(Z_t | X_t) p(X_t | Z_{t-1})} {p(Z_t | Z_{t-1})} \]
+where the denominator $p(Z_t | Z_{t-1})$ acts as a normalizing constant.
+
+\subsection{Kalman Filter}
+The Kalman Filter is a specific implementation of the Bayesian tracking framework, designed for linear systems with \textbf{Gaussian noise}.
+
+In line to what we have seen in the bayesian tracking section, the Kalman Filter still consists of:
+\begin{itemize}
+    \item A prediction of the next state (prior distribution);
+    \item An update of the state estimate based on new observations (posterior distribution).
+\end{itemize}
+It heavily relies on the assumption that both the process noise and the observation noise are Gaussian, 
+which allows for a closed-form solution to the estimation problem.
+
+The algorithm starts from a first measurement $Z_0$, with its associated noise variance $\sigma_{z_0}^2$.
+It assumes that the first prediction is equal to the first measurement, and that the first prediction error is equal to the noise variance of the first measurement:
+\[ \hat{X}_0 = Z_0 \]
+\[ \sigma_0 = \sigma_{z_0}^2 \]
+
+The Kalman Filter then iteratively performs the prediction and update steps as new measurements become available,
+propagating the state estimate and its associated uncertainty over time.
+Given a new measurement $Z_t \; \sigma_{z_t}^2$ at time $t$, the Kalman Filter performs the following steps:
+\begin{enumerate}
+    \item \textbf{Prediction:} we add a displacement to the previous state estimate
+    \[ \hat{X}_t = \hat{X}_{t-1} + K_t (Z_t - \hat{X}_{t-1}) \]
+    where $K_t$ is the \textbf{Kalman Gain}, which weights the influence of the new measurement 
+    relative to the current state estimate. It is computed as:
+    \[ K_t = \frac{\sigma_{z_{t-1}}^2}{\sigma_{z_{t-1}}^2 + \sigma_{z_t}^2} \]
+
+    We can see the prediction as a weighted average between the previous state estimate and the new measurement, 
+    where the weights are determined by the relative uncertainties of the two sources of information.
+     
+    \item \textbf{Update:} we update the error variance of the state estimate:
+    \[ \frac{1}{\sigma_t^2} = \frac{1}{\sigma_{z_{t-1}}^2} + \frac{1}{\sigma_{z_t}^2} \]
+\end{enumerate}
+The Kalman Filter provides a computationally efficient solution to the least-squares estimation problem. In particular,
+we are trying to find the Kalman Gain $K_t$ that minimizes the mean squared error of the state estimate $\hat{X}_t$.
+
+\subsubsection{Kalman Filter in Practice}
+Now that we have seen the mathematical formulation of the Kalman Filter, let's discuss how it can be applied in practice for motion tracking.
+
+\paragraph{State Model}
+The state model can be represented as a linear function of the previous state and the control input, plus some process noise:
+\[ x_t = A_t x_{t-1} + B_t u_t + w_{t-1} \] 
+Where:
+\begin{itemize}
+    \item $x_t$ is the state vector at time $t$;
+    \item $A_t$ is the state transition matrix that models how the state evolves from time $t-1$ to time $t$;
+    \item $B_t$ is the control input matrix that models how external inputs $u_t$ affect the state. For example,
+    in the case of a vehicle tracking scenario, $u_t$ could represent the acceleration or steering commands that influence the vehicle's motion;
+    \item $w_{t-1}$ is the process noise, assumed to be Gaussian with zero mean and covariance $Q_t$;
+\end{itemize}
+Usually, if we have no control input, we can simply ignore the term $B_t u_t$ in the state model, which simplifies it to:
+\[ x_t = A_t x_{t-1} + w_{t-1} \]
+
+\paragraph{Observation Model}
+The observation model can be represented as a linear function of the state, plus some observation noise:
+\[ z_t = H_t x_t + v_t \]
+Where:
+\begin{itemize}
+    \item $z_t$ is the observation vector at time $t$;
+    \item $H_t$ is the observation matrix that models how the state is transformed into observations;
+    \item $v_t$ is the observation noise, assumed to be Gaussian with zero mean and covariance $R_t$;
+\end{itemize}
+
+\subsubsection{The Recursive Stages}
+The filter iterates through the following equations to propagate the state estimate $\hat{x}$ 
+and the error covariance matrix $P$:
+\paragraph{1. Prediction}
+Project the state and uncertainty forward, discarding the optional control input for simplicity:
+\[ \hat{x}_k^- = A_k \hat{x}_{k-1} \]
+Once we have the predicted state, we also need to predict the error covariance matrix, which represents the uncertainty of our state estimate:
+\[ P_k^- = A_k P_{k-1} A_k^T + Q_k \]
+
+\paragraph{2. Update}
+The update step incorporates the new measurement $z_k$ to refine the state estimate and reduce uncertainty.
+In particular, we compute the Kalman Gain $K_k$, which determines how much we should trust the new measurement relative to our current state estimate. 
+Then, we update the state estimate $\hat{x}_k$ and the error covariance matrix $P_k$ accordingly:
+\begin{itemize}
+    \item \textbf{Kalman Gain:} $K_k = P_k^- H_k^T (H_k P_k^- H_k^T + R_k)^{-1}$
+    \item \textbf{State Update:} $\hat{x}_k = \hat{x}_k^- + K_k (z_k - H_k \hat{x}_k^-)$
+    \item \textbf{Covariance Update:} $P_k = (I - K_k H_k) P_k^-$
+\end{itemize}
