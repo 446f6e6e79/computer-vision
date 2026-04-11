@@ -433,3 +433,31 @@ likelihood of that state given the observations.
 
 The higher the number of particles, the closer our approximation will be to the true posterior distribution, but this also increases the computational cost of the algorithm.
 
+\subsubsection{Theoretical Definition}
+The Particle Filter defines a set of $N$ particles 
+$\{x_t^{(i)}, w_t^{(i)}\}_{i=1}^N$, where $x_t^{(i)}$ is the state of the $i$-th particle at time $t$, 
+and $w_t^{(i)}$ is its associated weight.
+
+These particles are selected from a proposal distribution $\pi(x_t | x_{t-1})$, 
+which is chosen as an hyperparameter of the algorithm.
+
+The a posteriori distribution of the state given the observations can be approximated as:
+\[ p(x_t | z_{t}) \approx \sum_{i=1}^N w_{t-1}^{(i)} \delta(x_t - x_t^{(i)}) \]
+where $\delta(x_t - x_t^{(i)})$ represents the distance between the state $x_t$ and the state of the $i$-th particle $x_t^{(i)}$.
+
+To update the particles and their weights, we perform the following steps:
+\begin{enumerate}
+    \item \textbf{Sampling:} For each particle, we sample a new state from the proposal distribution;
+    \item \textbf{Weighting:} We update the weight of each particle based on the likelihood of the new state given the observation:
+    \[ w_t^{(i)} = w_{t-1}^{(i)} p(z_t | x_t^{(i) }) \]
+    \item \textbf{Normalization:} the weights are normalized to ensure that they sum to 1. This is done by dividing
+    each weight by the sum of all weights:
+    \[ w_t^{(i)} = \frac{w_t^{(i)}}{\sum_{j=1}^N w_t^{(j)}} \]
+    \item \textbf{Resampling:} To prevent the problem of particle degeneracy, where a few particles have significant weights while others have negligible weights, we perform resampling.
+    This involves drawing a new set of particles from the current set, with replacement, according to their weights.
+    Each new particle is assigned a weight of $\frac{1}{N}$, and the process is repeated for the next time step.
+\end{enumerate}
+This way, at each iteration, more particles are concentrated in regions of the state space that are more likely given the observations, allowing for a more accurate approximation of the posterior distribution.
+
+For example, if we are tracking a person in a scene, and we have a new observation that indicates the person's direction of movement, the particles
+that are aligned with that direction will receive higher weights, while particles that are not aligned will receive lower weights and are less likely to be resampled in the next iteration.

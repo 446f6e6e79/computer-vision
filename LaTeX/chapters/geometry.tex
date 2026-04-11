@@ -1,0 +1,165 @@
+\section{Camera Geometry}
+We have already seen that the camera is a projection device. The location of the pixel in the image plane has a direct relationship
+with the location of the point in the 3D world. When we approximate the camera with a pinhole model, we might lose some information about the scene,
+such as the depth of the objects.
+
+The position of the acquisition device plays a crucial role in the way we perceive the world. In this section we will try to give some
+explanation of these phenomena and try to give an explanation of how the camera geometry works.
+
+\subsection{2D Case}
+Typically, a pixel is represented as a 2D point in the image plane using its coordinates.
+\[ p = \begin{bmatrix} x, y \end{bmatrix}^T  = \begin{bmatrix} x \\ y \end{bmatrix} \]
+
+Often, we use homogeneous coordinates to represent points in the image plane. This allows us to represent points at infinity and perform projective transformations more easily. In homogeneous coordinates, a point is represented as a three-dimensional vector:
+\[ p = \begin{bmatrix} sx, sy, s \end{bmatrix}^T \]
+where \( s \) is a scaling factor, commonly set to 1.
+
+\subsubsection{Affine Transformation}
+An affine transformation is a spatial transformation, represented as a multiplication of the \textbf{homogeneous point} with some predefined matrix.
+We can define different types of transformations, such as \textbf{scaling}, \textbf{rotation}, \textbf{translation} and a \textbf{composition} of them.
+
+\paragraph{Scaling}
+Scaling is a transformation that changes the size of an object, by multiplying the coordinates of each point by a scaling factor $c$. It is applied to all points in the image either uniformly or non-uniformly.
+The scaling transformation matrix $S_{c_x, c_y}$ is defined as:
+\[ S_{c_x, c_y} = \begin{bmatrix} c_x & 0 \\ 0 & c_y \end{bmatrix} \]
+
+where \( c_x \) and \( c_y \) are the scaling factors for the x and y directions, respectively. 
+If the scaling factors are the same, the transformation is uniform.
+
+The new coordinates \( (x', y') \) of the point after scaling can be calculated as:
+\[\begin{bmatrix} x' \\ y' \end{bmatrix} = \begin{bmatrix} c_x & 0 \\ 0 & c_y \end{bmatrix} \begin{bmatrix} x \\ y \end{bmatrix} \]
+
+We can express the new coordinates \( (x', y') \) of the point after scaling as:
+\[ x' = c_x \cdot x \]
+\[ y' = c_y \cdot y \]
+
+\paragraph{Rotation}
+Rotation is a transformation that changes the orientation of an object by rotating it around a specific point, usually the origin.
+
+The rotation transformation matrix $R_{\theta}$ for a rotation by an angle \( \theta \) is defined as:
+\[ R_{\theta} = \begin{bmatrix} \cos \theta & -\sin \theta \\ \sin \theta & \cos \theta \end{bmatrix} \]
+where \( \theta \) is the angle of rotation in radians.
+
+The rotation transformation can be applied to a point \( (x, y) \) in the image plane to obtain the new coordinates \( (x', y') \) after rotation:
+\[\begin{bmatrix} x' \\ y' \end{bmatrix} = \begin{bmatrix} \cos \theta & -\sin \theta \\ \sin \theta & \cos \theta \end{bmatrix} \begin{bmatrix} x \\ y \end{bmatrix} \]
+The new coordinates \( (x', y') \) of the point after rotation can be calculated as:
+\[ x' = x \cdot \cos \theta - y \cdot \sin \theta \]
+\[ y' = x \cdot \sin \theta + y \cdot \cos \theta \]
+
+\paragraph{Translation}
+Translation is a transformation that moves an object from one location to another without changing its shape or orientation, 
+It is represented as a \textbf{shift} in the coordinates of the points in the image, equivalent to changing the origin of the coordinate system.
+
+We basically want to move the point \( (x, y) \) to a new location \( (x', y') \) by adding a translation vector \( (x_0, y_0) \):
+\[ x' = x + x_0 \]
+\[ y' = y + y_0 \]
+To do this, we can represent the translation transformation using homogeneous coordinates, which allows us to express it as a matrix multiplication.
+The translation transformation matrix $D_{x_0, y_0}$ can be represented as:
+\[ D_{x_0, y_0} = \begin{bmatrix} 1 & 0 & x_0 \\ 0 & 1 & y_0 \\ 0 & 0 & 1 \end{bmatrix} \]
+
+The new coordinates \( (x', y') \) of the point after translation can be calculated as:
+\[\begin{bmatrix} x' \\ y' \\ 1 \end{bmatrix} = \begin{bmatrix} 1 & 0 & x_0 \\ 0 & 1 & y_0 \\ 0 & 0 & 1 \end{bmatrix} \begin{bmatrix} x \\ y \\ 1 \end{bmatrix} \]
+where \( x_0 \) and \( y_0 \) are the translation distances in the x and y directions, respectively.
+
+\subsubsection{Camera Matrix}
+All the transformations we have seen so far can be combined into a single transformation matrix, called the \textbf{camera matrix}. 
+This allows us to represent the relationship between the 3D world and the 2D image plane in a compact form, allowing 
+to correctly map points from the 3D world to the 2D image plane.
+
+The camera matrix is typically a combination of 4 parameters: rotation angle, translation vector, and the scaling factor. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{../media/geometry/2D-camera_matrix.png}
+    \caption{Camera matrix in the 2D case.}
+\end{figure}
+From the example, we can see how the point $P_1$, from the real world, is projected onto the image plane $X_i, Y_i$ as the point $P_2$.
+This is done by applying a translation from the real world coordinates to the camera coordinates, 
+then applying a rotation of angle $\theta$ and finally applying a scaling factor $s$ to get the final coordinates of the point in the image plane. 
+
+Given a point \( P_j \) in the real world, we can express the transformation to the image plane as follows:
+\[ P_j = D_{x_0, y_0} R_{\theta} S_{s_x, s_y} P_i \]
+where \( P_i \) is the point in the image plane, \( D_{x_0, y_0} \) is the translation matrix, \( R_{\theta} \) is the rotation matrix, and \( S_{s_x, s_y} \) is the scaling matrix.
+
+\paragraph{Compute the Camera Matrix}
+We can compute the parameters of the camera matrix by using a set of known points, called \textbf{control points} in the real world and their 
+corresponding points in the image plane.
+
+Since we have 4 parameters to estimate, we need at least 4 equations to solve for these parameters. Each control point
+provides us with 2 equations (one for the x-coordinate and one for the y-coordinate), so we need at least 2 control points.
+
+For each control point, we can write the following equations:
+\[ \begin{bmatrix}
+    x_w \\ y_w \\
+\end{bmatrix}
+=\begin{bmatrix}
+    1 & 0 & x_0 \\
+    0 & 1 & y_0 \\
+    0 & 0 & 1
+\end{bmatrix}
+\begin{bmatrix}
+    c_x & 0 & 0 \\
+    0 & c_y & 0 \\
+    0 & 0 & 1
+\end{bmatrix}
+\begin{bmatrix}
+    \cos \theta & -\sin \theta & 0 \\
+    \sin \theta & \cos \theta & 0 \\
+    0 & 0 & 1
+\end{bmatrix}
+\begin{bmatrix}
+    x_i \\ y_i \\ 1
+\end{bmatrix} \]
+where \( (x_w, y_w) \) are the coordinates of the point in the real world, 
+\( (x_i, y_i) \) are the coordinates of the point in the image plane, 
+\( (x_0, y_0) \) are the translation parameters, 
+\( (c_x, c_y) \) are the scaling parameters, 
+and \( \theta \) is the rotation angle.
+
+\subsubsection{General Camera Matrix}
+Given that the three matrices that we are multiplying ($R_{\theta}, S_{s_x, s_y}, D_{x_0, y_0}$) are all of the same size,
+we can combine them into a \textbf{single camera matrix} \( C \):
+\[ C = \begin{bmatrix}
+    a_{11} & a_{12} & a_{13} \\
+    a_{21} & a_{22} & a_{23} \\
+    0 & 0 & 1
+\end{bmatrix} \]
+
+Given the camera matrix \( C \), we can compute the transformation from the real world to the image plane and vice versa.
+For example, given a point \( P_j = \begin{bmatrix} x_j \\ y_j \\ 1 \end{bmatrix} \) in the real world, we can compute its projection on the image plane as follows:
+\[ P_i = C P_j \]
+
+\paragraph{Least Square Approach}
+To obtain the 6 parameters of the camera matrix \( C \), we need at least 3 control points. 
+A good rule of thumb is to select them in a way that they are not collinear or too close to each other, to avoid numerical instability in the estimation of the parameters.
+But, a more effective way to reduce the error in the estimation of the camera matrix is to use more than 3 control points and solve for the parameters using a least squares approach.
+
+Our goal is to find the set of parameters that minimizes the \textbf{error} between the projected points and the actual points in the image plane.
+The error can be defined as the sum of the squared distances between the projected points and the actual points in the image plane:
+\[ E = \sum_{j=1}^{N} (a_{11} x_j + a_{12} y_j + a_{13} - u_j)^2 + (a_{21} x_j + a_{22} y_j + a_{23} - v_j)^2 \]
+where \( (u_j, v_j) \) are the coordinates of the point in the image plane corresponding to the control point \( P_j = \begin{bmatrix} x_j & y_j & 1 \end{bmatrix} \) in the real world.
+
+The solution to this optimization problem can be found by computing the partial derivatives of the error function with respect to the parameters of the camera matrix,
+setting them to zero, and solving the resulting system of equations.
+
+The resulting equation system is:
+\[ \begin{bmatrix}
+    \sum x_j^2 & \sum x_j y_j & \sum x_j & 0 & 0 & 0 \\
+    \sum x_j y_j & \sum y_j^2 & \sum y_j & 0 & 0 & 0 \\
+    \sum x_j & \sum y_j & N & 0 & 0 & 0 \\
+    0 & 0 & 0 & \sum x_j^2 & \sum x_j y_j & \sum x_j \\
+    0 & 0 & 0 & \sum x_j y_j & \sum y_j^2 & \sum y_j \\
+    0 & 0 & 0 & \sum x_j & \sum y_j & N
+\end{bmatrix}
+\begin{bmatrix}
+    a_{11} \\ a_{12} \\ a_{13} \\ a_{21} \\ a_{22} \\ a_{23}
+\end{bmatrix} =
+\begin{bmatrix}
+    \sum x_j u_j \\ \sum y_j u_j \\ \sum u_j \\ \sum x_j v_j \\ \sum y_j v_j \\ \sum v_j
+\end{bmatrix} \]
+This system of equations can be solved using standard linear algebra techniques, such as Gaussian elimination or singular value decomposition, to find the parameters of the camera matrix \( C \).
+
+\subsection{3D Case}
+What we have seen so far is a simplified version of the camera geometry, where we have only considered the 2D case.
+This was only applicable to the case where the camera is looking at a flat surface, which is perfectly parallel to the image plane. 
+
+In the real world, we have a 3D scene and the camera is looking at it from a certain point of view.
