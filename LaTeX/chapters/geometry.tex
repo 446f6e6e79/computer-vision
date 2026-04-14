@@ -162,4 +162,146 @@ This system of equations can be solved using standard linear algebra techniques,
 What we have seen so far is a simplified version of the camera geometry, where we have only considered the 2D case.
 This was only applicable to the case where the camera is looking at a flat surface, which is perfectly parallel to the image plane. 
 
-In the real world, we have a 3D scene and the camera is looking at it from a certain point of view.
+In the real world, we usually have a 3D scene and the camera is looking at it from a certain point of view. In this case, we also need to consider
+the \textbf{calibration} of the camera, which is the process of estimating the \textbf{intrinsic} parameters of the camera, and the \textbf{extrinsic} parameters.
+
+\subsubsection{Calibration}
+As we just said, we need to consider both intrinsic and extrinsic parameters of the camera to correctly model the camera geometry in the 3D case.
+
+\paragraph{Intrinsic} set of parameters that describe the internal characteristics of the camera, and are specific to the sensor itself.
+They include parameters such as the focal length, image distortion, and the size of the pixels.
+
+These parameters are crucial for accurately modeling the 3D geometry of the scene. In fact, since each camera has its own intrinsic parameters,
+they will affect the outcome of the projection of the 3D points onto the image plane.
+
+\paragraph{Extrinsic} set of parameters that describe the position and orientation of the camera in the 3D world. 
+They include parameters such as the rotation and translation of the camera with respect to a reference coordinate system.
+
+Calibration is the process of estimating both intrinsic and extrinsic parameters of the camera, that allow us to correctly
+map the 3D points in the world to the 2D points in the image plane.
+
+\subsubsection{3D representation}
+In the 3D case, we can represent a point in the world as a 3D vector:
+\[ P = \begin{bmatrix} X, Y, Z \end{bmatrix}^T \]
+where \( X, Y, Z \) are the coordinates of the point in the 3D space.
+
+We can also represent the point in homogeneous coordinates as:
+\[ P = \begin{bmatrix} sX, sY, sZ, s \end{bmatrix}^T \]
+where \( s \) is a scaling factor, commonly set to 1.
+
+In general, each point has 4 coordinates systems:
+\begin{itemize}
+    \item \textbf{Model coordinate system}: the coordinate system defined by the 3D model of the scene, with the origin at a specific point in the scene and the axes aligned with the model;
+    \item \textbf{World coordinate system}: the real-world coordinate system;
+    \item \textbf{Camera 1 coordinate system}: the coordinate system defined by one camera;
+    \item \textbf{Camera 2 coordinate system}: the coordinate system defined by another camera;
+\end{itemize}
+Since the two cameras can have opposite views of the scene, there is no guarantee that there exists 
+a one-to-one mapping for all the points in the scene. 
+In fact, some points might be visible in one camera and not in the other, due to occlusions or the limited field of view of the cameras.
+For this kind of points, we cannot find their corresponding points in the 3D space.
+
+\subsubsection{3D affine transformation}
+Similar to the 2D case, we can also define affine transformations in the 3D case.
+The main difference is that we need to consider the z-coordinate of the points in the 3D space, 
+and the transformation matrices will be of size 4x4 instead of 3x3.
+
+\note{In the following section we will use a slightly different notation from the previous one.
+In particular, we represent as:
+\[^kP_i\]
+the pixel \( P_i \) in the coordinate system of the camera \( k \).}
+\paragraph{Translation}
+The translation transformation, mapping a point \( ^1P_i \) in the coordinate system of camera 1 to a point \( ^2P_i \) in the coordinate system of camera 2, can be represented as:
+
+\[ ^2P_i = T(t_x, t_y, t_z) ^1P_i \]
+where \( T(t_x, t_y, t_z) \) is the translation matrix defined as:
+\[ T(t_x, t_y, t_z) = \begin{bmatrix}
+    1 & 0 & 0 & t_x \\
+    0 & 1 & 0 & t_y \\
+    0 & 0 & 1 & t_z \\
+    0 & 0 & 0 & 1
+\end{bmatrix} \]
+where \( (t_x, t_y, t_z) \) are the translation distances in the x, y, and z directions, respectively.
+
+\paragraph{Scaling}
+The scaling transformation, mapping a point \( ^1P_i \) in the coordinate system of camera 1 to a point \( ^2P_i \) in the coordinate system of camera 2, can be represented as:
+\[ ^2P_i = S(s_x, s_y, s_z) ^1P_i \]
+where \( S(s_x, s_y, s_z) \) is the scaling matrix defined as:
+\[ S(s_x, s_y, s_z) = \begin{bmatrix}
+    s_x & 0 & 0 & 0 \\
+    0 & s_y & 0 & 0 \\
+    0 & 0 & s_z & 0 \\
+    0 & 0 & 0 & 1
+\end{bmatrix} \]
+where \( (s_x, s_y, s_z) \) are the scaling factors in the x, y, and z directions, respectively.
+
+\paragraph{Rotation}
+The rotation transformation needs to consider the three angles of rotation around the x, y, and z axes.
+
+The rotation transformation, mapping a point \( ^1P_i \) in the coordinate system of camera 1 to a point \( ^2P_i \) in the coordinate system of camera 2, can be represented as:
+\begin{itemize}
+    \item Rotation around the x-axis:
+    \[ ^2P_i = R(X, \theta_x) ^1P_i \]
+    where \( R(X, \theta_x) \) is the rotation matrix defined as:
+    \[ R(X, \theta_x) = \begin{bmatrix}
+        1 & 0 & 0 & 0 \\
+        0 & \cos \theta_x & -\sin \theta_x & 0 \\
+        0 & \sin \theta_x & \cos \theta_x & 0 \\
+        0 & 0 & 0 & 1
+    \end{bmatrix} \]
+    where \( \theta_x \) is the angle of rotation around the x-axis in radians.
+    \item Rotation around the y-axis:
+    \[ ^2P_i = R(Y, \theta_y) ^1P_i \]
+    where \( R(Y, \theta_y) \) is the rotation matrix defined as:
+    \[ R(Y, \theta_y) = \begin{bmatrix}
+        \cos \theta_y & 0 & \sin \theta_y & 0 \\
+        0 & 1 & 0 & 0 \\
+        -\sin \theta_y & 0 & \cos \theta_y & 0 \\
+        0 & 0 & 0 & 1
+    \end{bmatrix} \]
+    where \( \theta_y \) is the angle of rotation around the y-axis in radians.
+    \item Rotation around the z-axis:
+    \[ ^2P_i = R(Z, \theta_z) ^1P_i \]
+    where \( R(Z, \theta_z) \) is the rotation matrix defined as:
+    \[ R(Z, \theta_z) = \begin{bmatrix}
+        \cos \theta_z & -\sin \theta_z & 0 & 0 \\
+        \sin \theta_z & \cos \theta_z & 0 & 0 \\
+        0 & 0 & 1 & 0 \\
+        0 & 0 & 0 & 1
+    \end{bmatrix} \]
+    where \( \theta_z \) is the angle of rotation around the z-axis in radians.
+\end{itemize}
+
+\subsubsection{General Transformation Matrix}
+Similar to the 2D case, we can also define a general camera matrix in the 3D case, which combines all the transformations we have seen so far into a single matrix.
+The general camera matrix \( C \) can be represented as:
+\[ C = \begin{bmatrix}
+    r_{11} & r_{12} & r_{13} & t_x \\
+    r_{21} & r_{22} & r_{23} & t_y \\
+    r_{31} & r_{32} & r_{33} & t_z \\
+    0 & 0 & 0 & 1
+\end{bmatrix} \]
+This matrix allows us to represent the transformation from real from camera 1 points  \( ^1P_i \) to camera 2 points  \( ^2P_i \)  as follows:
+\[ ^2P_i = C ^1P_i \]
+
+\subsubsection{Camera Model}
+The General Transformation Matrix \( C \) is a powerful tool to represent the transformation between different camer coordinate systems, 
+but it doesn't allow to map points from the 3D world to the 2D image plane, since it doesn't consider the intrinsic parameters of the camera.
+
+To do this, we need to define a camera model that combines both the intrinsic and extrinsic parameters of the camera.
+Given the matrix $^I_WC$, we can map points from the world coordinate system $^WP$ to the image plane $^IP$ as follows:
+\[ ^IP = ^I_WC ^WP \]
+where \( ^I_WC \) is the camera matrix that combines both intrinsic and extrinsic parameters of the camera, and \( ^WP \) is the point in the world coordinate system.
+
+Formally, this transformation can be represented as:
+\[ \begin{bmatrix}
+    s' P_x \\ s' P_y \\ s'
+\end{bmatrix} =
+^I_WC \begin{bmatrix}
+    ^WP_x \\ ^WP_y \\ ^WP_z \\ 1
+\end{bmatrix} \]
+
+\subsubsection{}
+The previously defined camera model is a simplified version of the real camera model, which is based on the pinhole camera model.
+In fact, the points in the real world are considered as continuous, while the points in the image plane are discrete, since they are represented as pixels.
+
