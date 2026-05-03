@@ -301,7 +301,25 @@ Formally, this transformation can be represented as:
     ^WP_x \\ ^WP_y \\ ^WP_z \\ 1
 \end{bmatrix} \]
 
-\subsubsection{}
+\subsubsection{Extension of the Camera Model}
 The previously defined camera model is a simplified version of the real camera model, which is based on the pinhole camera model.
 In fact, the points in the real world are considered as continuous, while the points in the image plane are discrete, since they are represented as pixels.
 
+We need to apply some additional transformations to the camera model, such as:
+\begin{itemize}
+    \item \textbf{Roto-Translation}: to account for the rotation and translation of the camera in the 3D world, we apply a roto-translation
+    transformation to the camera model, which allows us to correctly map points from the world coordinate system $^WP$ to the camera coordinate system $^CP$.
+    \item \textbf{Projection}: to map the 3D points in the camera coordinate system $^CP$ to the 2D points into an intermediate image plane $^FP$, we apply a projection transformation.
+    \item \textbf{Pixel Scaling}: to account for the size of the pixels in the image plane, we apply a scaling transformation to the camera model, 
+    which allows us to correctly map points from the camera coordinate system $^FP$ (still in mm) to the image plane $^IP$ (in pixels).
+\end{itemize}
+This entire process gives us our final camera model, which allows us to correctly map points from the 3D world to the 2D image plane.
+
+It can be defined as follows:
+\[ ^IP = C ^WP \]
+where \( C \) is the final camera matrix that combines all the transformations we have seen so far, including the roto-translation, projection, and pixel scaling transformations.
+\[ C = \begin{matrix}
+    c_{11} & c_{12} & c_{13} & c_{14} \\
+    c_{21} & c_{22} & c_{23} & c_{24} \\
+    c_{31} & c_{32} & c_{33} & 1 \\
+\end{matrix}\]
