@@ -1,21 +1,27 @@
 \section{Models}
-To represent the real world using equations, we first need to define a model. A model is a \textbf{mathematical approximation} of
-the real world, which allows describing events and phenomena using parametric representations. The parameters of the model
-can be used for processing purposes.
+To represent the real world using equations, we first need to define a model. 
+A model is a \textbf{mathematical approximation} of the real world, which allows describing events and phenomena using parametric representations. 
+The parameters of the model can be used for processing purposes.
 
 \subsection{Pinhole Camera Model}
-The first model we will discuss is the \textbf{pinhole camera model}, which relates to how a camera captures an image.
-It assumes that an object in the real world emits light rays that pass through a small hole (the pinhole) and project onto an image plane.
+The first model we will discuss is the \textbf{pinhole camera model}, which relates to how a camera captures an image. 
+It assumes that an object in the real world emits light rays that pass through a small hole (the pinhole) and project onto an image plane, creating an image.
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.5\textwidth]{../media/models/pinhole-camera-model.png}
     \caption{Pinhole Camera Model}
 \end{figure}
-We want to make sure that only a single ray of light from each point passes through the pinhole (ideally, it should be a point), which allows us to create a clear image on the image plane.
-Bigger holes would allow multiple rays from the same point to pass through, resulting in a blurry image.
+The pinhole camera model is a simple geometric model that captures the essential features of image formation.
 
-On the image plane, the rays of light from the object are projected, creating an image which is flipped upside down and its size is determined by the distance between the object and the pinhole and the distance
-between the pinhole and the image plane (also known as the \textbf{focal length} $f$). The relationship between the object size, the image size, and the distances can be described using similar triangles, as follows:
+We want to make sure that only a \textbf{single ray of light} from each point of the object passes through the pinhole (ideally, the pinhole should be infinitely small), 
+which allows us to create a clear image on the image plane. 
+Bigger holes would allow multiple rays from the same point to pass through, resulting in a blurry / out-of-focus image.
+
+On the image plane, the rays of light from the object are projected, creating an image which is flipped upside down. 
+Its size is determined by the distance between the object and the pinhole, and the distance between the pinhole and the image plane 
+(also known as the \textbf{focal length} $f$). 
+The relationship between the object size, the image size, and the distances can be described using similar triangles:
 
 \begin{minipage}{0.45\textwidth}
     \centering
@@ -31,10 +37,8 @@ between the pinhole and the image plane (also known as the \textbf{focal length}
     \captionof{figure}{Projection of the point $P$ onto the image plane (2D representation)}
 \end{minipage}
 
-As shown in the figure, the point $P$ in the real world is projected onto the image plane as $P'$. 
-The coordinates of $P'$ can be obtained using the geometric properties of the pinhole camera model. 
-In particular, the triangles formed by the points $P$, $C$ (the pinhole), and $P'$ are similar, 
-which means that the ratios between the corresponding sides are equal.
+\vspace{1em}
+As shown in the figure, the point $P$ in the real world is projected onto the image plane as $P'$. The coordinates of $P'$ can be obtained using the geometric properties of the pinhole camera model. The triangles formed by the points $P$, $C$ (the pinhole), and $P'$ are similar, which means that the ratios between the corresponding sides are equal.
 
 This leads to the following relations:
 \begin{equation*}
@@ -45,40 +49,138 @@ Z' = -f \\\\
 \end{cases}
 \end{equation*}
 
-Substituting $Z' = -f$ and rearranging the equations, we obtain
+Substituting $Z' = -f$ and rearranging the equations, we obtain:
 \begin{align*}
 X' &= -f \frac{X}{Z} \\
 Y' &= -f \frac{Y}{Z}
 \end{align*}
 
-Therefore, the projection of the 3D point $P=(X,Y,Z)$ onto the image plane is given by
+Therefore, the projection of the 3D point $P=(X,Y,Z)$ onto the image plane is given by:
 \[
-P' = \left(-f \frac{X}{Z},\; -f \frac{Y}{Z},\; -f\right).
+P' = \left(-f \frac{X}{Z},\; -f \frac{Y}{Z},\; -f\right)
 \]
 
 \subsubsection{Features of the model}
 The pinhole camera model has several important features:
 \begin{itemize}
-    \item Further objects appear smaller in the image, which is a consequence of the projection process. It is not able to correctly capture the depth information of the scene;
-    \item Parallel lines in the real world appear to converge towards a single point in the image, known as the \textbf{vanishing point}. The line connecting the vanishing is called the \textbf{horizon line}.
-    Vertical lines in the real world will still appear vertical in the image, being perpendicular to the horizon line;
-    \item The image is inverted (upside down) due to the way light rays pass through the pinhole;
-    \item The model assumes that the pinhole is infinitely small, which is obviously an idealization. This would also require an infinite
-    amount of light to pass through, which is not practical. 
+    \item Further objects appear smaller in the image, which is a consequence of the projection process. It is not able to correctly capture depth information directly.
+    \item Parallel lines in the real world appear to converge towards a single point in the image, known as the \textbf{vanishing point}. The line connecting the vanishing points is called the \textbf{horizon line}. Vertical lines in the real world will still appear vertical in the image, being perpendicular to the horizon line.
+    \item The image is inverted (upside down) due to the way light rays pass through the pinhole.
+    \item The model assumes that the pinhole is infinitely small, which is an idealization. This would require an infinite amount of light to pass through to create a visible image, which is not practical.
+\end{itemize}
+
+% ---------------------------------------------------------
+% LENSES MOVED HERE: Logical progression from Pinhole limitations
+% ---------------------------------------------------------
+\subsection{Lenses}
+Up until now, we have assumed that our cameras were pinhole cameras, which is not the case in the real world. In reality, cameras use \textbf{lenses} to focus light onto the image plane. This allows a wider set of light rays from the same point $P$ to merge at point $P'$ on the image plane, creating a brighter image without losing sharpness—provided the distances obey the \textit{thin lens equation}.
+
+\subsubsection{Thin Lens Equation}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{../media/models/thin_lens.png}
+    \caption{Thin Lens model.}
+\end{figure}
+
+Suppose we have an object at distance $u$ from the lens, and an image plane at distance $v$ from the lens. Let $X$ be the object height and $X'$ be the projected image height. By considering the similar triangles formed by rays passing through the optical center, we have:
+\begin{equation}
+    \frac{X}{u} = \frac{X'}{v}
+\end{equation}
+Considering a second ray passing through the focal point $F$ (at distance $f$ from the lens):
+\begin{equation}
+    \frac{X}{u - f} = \frac{X'}{f}
+\end{equation}
+Equating the ratios for $\frac{X}{X'}$, we get:
+\begin{equation*}
+    \frac{u}{v} = \frac{u - f}{f}
+\end{equation*}
+Cross-multiplying yields $uf = v(u - f) \implies uf = vu - vf$. Dividing all terms by $uvf$, we arrive at the \textit{thin lens equation}:
+\begin{equation}
+    \label{eq:thin_lens_equation}
+    \frac{1}{f} = \frac{1}{u} + \frac{1}{v}
+\end{equation}
+This equation describes the relationship between the focal length $f$, the object distance $u$, and the image plane distance $v$. If the object goes to infinity ($u \rightarrow \infty$), the image plane must be located exactly at the focal length ($v = f$).
+
+\subsubsection{Focus \& Depth of Field}
+If we move the image plane (changing $v$), the point $P'$ will project to a different area, meaning the objects will be out of focus. Similarly, if $P$ moves (changing $u$), the image plane must be adjusted to keep the object in focus.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{../media/models/focus.png}
+    \caption{Focus and out-of-focus objects.}
+\end{figure}
+
+When out of focus, instead of a single point $P'$, we get a \textbf{blur circle} of diameter $b$. We must define an acceptable level of blur. Using the thin lens equation, we can determine the range of distances where objects remain acceptably sharp, known as the \textbf{depth of field}.
+
+Let $a$ be the lens aperture diameter. The range of acceptable image plane distances is:
+\begin{equation*}
+    \begin{cases}
+        v' = \frac{a + b}{a} v  \\\\
+        v'' = \frac{a - b}{a} v
+    \end{cases}
+\end{equation*}
+Translating this to object distances gives us the near limit ($u_n$) and far limit ($u_r$) of the depth of field:
+\begin{equation*}
+    \begin{cases}
+        u_n = \frac{u(a+b)}{a+ \frac{bu}{f}} \\\\
+        u_r = \frac{u(a-b)}{a- \frac{bu}{f}}
+    \end{cases}
+\end{equation*}
+
+Notice that:
+\begin{itemize}
+    \item If $f$ becomes smaller, $u_r$ becomes larger, resulting in a wider depth of field.
+    \item If $u \rightarrow \infty$, the rays are parallel, $v = f$, and all distant objects remain in focus.
+\end{itemize}
+
+\subsubsection{Autofocus}
+Modern cameras use autofocus systems to adjust the image plane position:
+\begin{itemize}
+    \item \textbf{Active autofocus}: The camera emits a signal (e.g., infrared) and measures the time of flight to estimate distance. It struggles with distant objects, interference, or highly reflective surfaces.
+    \item \textbf{Passive autofocus}: The camera analyzes the image itself (often targeting high-contrast edges) to maximize sharpness. 
+\end{itemize}
+
+\subsubsection{Resolution, Blur, and Resolving Power}
+A camera with an $N \times M$ pixel sensor can detect at most $\frac{N}{2}$ horizontal lines (one pixel must be left between two lines to distinguish them). We define the \textbf{resolving power} $R_p$ as the maximum number of lines per unit distance the camera can distinguish:
+\begin{equation}
+    R_p = \frac{1}{2\Delta}
+\end{equation}
+where $\Delta$ is the spacing between two distinguishable lines on the sensor.
+
+\paragraph{Example:}
+Consider a $36\text{mm} \times 24\text{mm}$ sensor with a resolution of $4000 \times 2500$ pixels. Calculating vertical $\Delta$:
+\begin{equation*}
+    \Delta = \frac{24\text{mm}}{2500} \approx 0.01\text{mm}
+\end{equation*}
+Thus, the resolving power is $R_p = \frac{1}{2 \times 0.01\text{mm}} = 50 \text{ lines/mm}$.
+
+If we capture an object at distance $u = 5000\text{mm}$ with focal length $f = 50\text{mm}$, what is the minimum distinguishable object size?
+Rays from adjacent distinguishable lines have an angular separation $\theta$. For small angles:
+\begin{equation*}
+    2 \Delta \approx f \theta \implies \theta = \frac{2 \Delta}{f} = \frac{0.02\text{mm}}{50\text{mm}} = 0.0004 \text{ radians}
+\end{equation*}
+The minimum object size is:
+\begin{equation*}
+    \text{object size} \approx u \theta = 5000\text{mm} \times 0.0004 = 2\text{mm}
+\end{equation*}
+
+\subsubsection{Typical Lens Issues}
+\begin{itemize}
+    \item \textbf{Barrel distortion}: Caused by wide-angle lenses; straight lines curve outward from the center.
+    \item \textbf{Chromatic aberration}: Different wavelengths are refracted differently, resulting in color fringing around edges.
+    \item \textbf{Vignetting}: Light falloff causes the image corners to appear darker than the center.
 \end{itemize}
 
 \subsection{Projection}
-By the time we capture an image, we have already projected the 3D world onto a 2D plane (the image plane).
-Considering also the time dimension, we can formalize the projection process as a mapping from a 4D space to a 3D space:
+By the time we capture an image, we have already projected the 3D world onto a 2D plane. 
+Considering the time dimension, we formalize projection as:
 \[f: \mathbb{R}^4 \rightarrow \mathbb{R}^3\]
 \[ (X, Y, Z, t) \mapsto (x, y, t)\]
-
-We can represent two types of projections: \textbf{perspective projection} and \textbf{orthographic projection}.
+We will discuss the two main projection models used in computer vision: \textbf{perspective projection} and \textbf{orthographic projection}.
 
 \subsubsection{Perspective Projection}
-Similar to the pinhole camera model, the perspective projection captures the way objects appear smaller as they are further away from the camera.
-The only difference is that now the image plane is placed on the origin of the coordinate system, while the pinhole (lens center) is placed between the image plane and the object,
-at a distance equal to the focal length $f$.
+Perspective projection models how objects appear smaller as distance increases. 
+In this specific coordinate convention, the image plane is at the origin $(0,0,0)$ and the lens center is at $Z = f$.
 \begin{figure}[H]
     \centering
     \scalebox{0.8}{
@@ -86,7 +188,8 @@ at a distance equal to the focal length $f$.
     }
     \caption{Perspective Projection}
 \end{figure}
-The triangles formed by the points $P$, $C$ (the pinhole), and $P'$ are again similar, which leads to the following relations:
+
+The similar triangles formed by points $P$, $C$, and $P'$ give:
 \begin{equation*}
 \begin{cases}
 Z' = 0 \\\\
@@ -95,23 +198,15 @@ Z' = 0 \\\\
 \end{cases}
 \end{equation*}
 
-Substituting $Z' = 0$ and rearranging the equations, we obtain
-\begin{align*}
-x &= f \frac{X}{Z - f} \\
-y &= f \frac{Y}{Z - f}
-\end{align*}
-
-Therefore, the projection of the 3D point $P=(X,Y,Z)$ onto the image plane is given by
+Therefore, the projection of $P=(X,Y,Z)$ is:
 \[
-P' = \left(f \frac{X}{Z - f},\; f \frac{Y}{Z - f},\; 0\right).
+P' = \left(f \frac{X}{Z - f},\; f \frac{Y}{Z - f},\; 0\right)
 \]
-We can notice that knowing the coordinates of the projection $P'$ and the focal length $f$, we cannot recover the original coordinates of the point $P$, since we have two equations and three unknowns.
-This is a consequence of the fact that we have lost the depth information during the projection process, which is a fundamental limitation of the perspective projection model.
-In case two cameras are used to capture the same scene from different viewpoints, we can use the information from both images to recover the depth information of the scene.
+Because perspective projection maps infinitely many 3D points lying on the same viewing ray to the same image point, 
+depth cannot be recovered from a single image alone without additional constraints or multiple views (e.g., stereo vision).
 
-\subsubsection{Simplified Perspective Projection}
-The previous model still suffer from the limitation of the pinhole camera model, that flips the image upside down. 
-We can easily fix this by placing a virtual image plane between the pinhole and the object, at a distance equal to the focal length $f$.
+\subsubsection*{Simplified Perspective Projection}
+To avoid an inverted image, we can place a virtual image plane in front of the lens at distance $f$.
 \begin{figure}[H]
     \centering
     \scalebox{0.8}{
@@ -119,220 +214,46 @@ We can easily fix this by placing a virtual image plane between the pinhole and 
     }
     \caption{Simplified Perspective Projection.}
 \end{figure}
-The final equations for the projection of the 3D point $P=(X,Y,Z)$ onto the image plane are the same as in the perspective projection model, removing the term $-f$ from the denominator:
-\[P' = \left(f \frac{X}{Z},\; f \frac{Y}{Z},\; 0\right).\]
-It's important to note that this model is a simplification of the perspective projection model, which is only valid when $f \ll Z$, meaning that the focal length is much smaller than the distance between the object and the camera.
-In the real world, this is often the case, since the focal length of a camera is typically a few millimeters, while the distance between the camera and the objects in the scene is usually much larger.
+
+The simplified equations map the 3D point $P=(X,Y,Z)$ to:
+\[P' = \left(f \frac{X}{Z},\; f \frac{Y}{Z},\; 0\right)\]
+This simplification is highly practical and standard when $f \ll Z$.
 
 \subsubsection{Orthographic Projection}
-In the orthographic projection, we assume that all the rays of light from the object are parallel to each other and perpendicular to the image plane.
-This means that the size of the object in the image does not change with distance, and there is no perspective distortion.
+Orthographic projection assumes that light rays generated by the scene are parallel and perpendicular to the image plane. 
+This allows for a simple projection where perspective distortion is ignored.
 \begin{figure}[H]
     \centering
-        \includegraphics[width=0.5\textwidth]{../media/models/orthographic-projection.png}
-        \caption{Orthographic Projection model.}
+    \includegraphics[width=0.5\textwidth]{../media/models/orthographic-projection.png}
+    \caption{Orthographic Projection model.}
 \end{figure}
-This assumption is valid when the distance between the camera and the objects in the scene is much larger than the depth of the scene, which is often the case in applications such as satellite imaging or architectural drawings.
 
-The projection of a 3D point $P=(X,Y,Z)$ onto the image plane in the orthographic projection model is given by
-\[P' = (X, Y, 0)\] This could also be rewritten in matrix form as follows:
+This is valid when the object's depth is negligible compared to its distance from the camera (e.g., satellite imaging).
+\[P' = (X, Y, 0)\]
+In matrix form:
 \[
     \begin{bmatrix} x \\ y \end{bmatrix} = \begin{bmatrix} 1 & 0 & 0 \\ 0 & 1 & 0 \end{bmatrix} \begin{bmatrix} X \\ Y \\ Z \end{bmatrix}
 \]
-We can see this as a special case of the perspective projection model, where the focal length $f$ is infinite, which means that the rays of light are parallel to each other and perpendicular to the image plane.
 
 \subsection{Illumination Model}
-Illumination plays a very critical role in Computer Vision. 
-The way light interacts with objects in the scene can significantly affect the appearance of the objects in the image, and thus, the performance of computer vision algorithms.
+Once geometry is established, illumination dictates the pixel intensities. Light hitting an object can be \textbf{absorbed}, \textbf{reflected}, or \textbf{transmitted}. Cameras rely purely on reflected light.
 
-When a light source hits an object, it can be \textbf{absorbed}, \textbf{reflected}, or \textbf{transmitted} through the object.
-
-This is quite difficult to model from the camera's perspective, since we perceive objects based on the light that is reflected from them.
-
-\subsubsection{Reflection}
-Reflection can be of two types:
+\subsubsection{Reflection Types}
 \begin{itemize}
-    \item \textbf{Specular}: more energy is concentrated in the light source direction;
-    \item \textbf{Diffuse}: constant energy in all directions. The position of the observer is irrelevant,
+    \item \textbf{Specular}: Energy is concentrated in a specific direction (glossy surfaces).
+    \item \textbf{Diffuse}: Energy is scattered uniformly in all directions (matte surfaces). Observer position is irrelevant.
 \end{itemize}
 
-\subsubsection{Surface Properties}
-The type of reflection depends on the surface properties of the object, such as its roughness, color, and texture.
-Some of them reflect light uniformly in all directions (matte surfaces), while others reflect light in a more concentrated manner (glossy surfaces).
+\subsubsection{Lambertian Reflectance Model}
+Assuming a distant, single light source, rays are parallel. For a perfectly diffuse (Lambertian) surface, the reflected intensity $i$ is proportional to the cosine of the angle $\alpha$ between the \textbf{surface normal} $n$ and the \textbf{light direction} $s$ (Lambert's Cosine Law).
 
-It would be ideal if all objects had matte surfaces, since they would be easier to model and analyze, while glossy surfaces can create artifacts in the image, which can make it difficult to extract useful information from the image.
-
-\subsubsection*{Lambertian Surfaces}
-Let's first suppose that we have only one light source which is far away from the scene, so that we can assume that all the rays of light emitted from the light source are parallel to each other.
-
-For each surface point the light is irradiated considering the cosine of the angle between the \textbf{surface normal} and the \textbf{light direction}, which is known as the \textbf{Lambert's cosine law}.
-This means that the intensity of the light reflected from a surface point is proportional to the \textbf{cosine} of the \textbf{angle} between the surface normal and the light direction.
-Letting $i$ be the intensity of the reflected light, $s$ be the intensity of the light source, $n$ be the surface normal, we can write the Lambert's cosine law as follows:
-\[i = s \cdot n\]
-This approximation is valid only for \textbf{diffuse reflection}, where the surface reflects light uniformly in all directions.
-This is not a realistic model for all surfaces, but it still provides a useful approximation which can be turned into a parametric model.
-
-\subsubsection*{Lambertian Reflectance Model}
-The Lambertian reflectance model is a simple model that describes the way light is reflected from a surface point, assuming that the surface is a Lambertian surface.
-The model can be expressed as follows:
+The model is expressed as:
 \begin{equation}
     \label{eq:lambertian_reflectance_model}
-    i = \rho s \cdot n \cdot
+    i = \rho (s \cdot n)
 \end{equation}
-which can be computed as:
+which expands to:
 \[ i = \rho \|n\| \|s\| \cos(\alpha)\]
-where $\rho$ is the albedo of the surface, which represents the fraction of light that is reflected from the surface.
+where $\rho$ is the surface \textit{albedo} (the fraction of reflected light). 
 
-An element is not visible if $n \cdot s \leq 0$, which means that the surface normal is pointing away from the light source, and thus, the surface point is in shadow.
-
-\subsection{Lenses}
-Up until now, we have assumed that our camera were pinhole cameras, which is not the case in the real world.
-In reality, cameras use \textbf{lenses} to focus light onto the image plane. This means that the objects in the scene are \textbf{on focus}
-if the distance between the camera and the image plane obeys the textit{thin lens equation}.
-
-\subsubsection{Thin Lens Equation}
-Using a lens instead of a pinhole means that a wide set of rays of light from the same point $P$ are merged together to the same point $P'$ on the image plane.
-The intensity of each ray of light is summed together, which allows us to capture more light and thus, create a brighter image.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.5\textwidth]{../media/models/thin_lens.png}
-    \caption{Thin Lens model.}
-\end{figure}
-Supposing that we have an object at distance $u$ from the lens, and an image plane at distance $v$ from the lens. Considering the similar triangles formed by the points $P$, $R$, $O$ and $p'$, $S$, $O$, we can derive that:
-\begin{equation*}
-    \frac{X'}{Z'+f} = \frac{X}{Z + f}
-\end{equation*}
-Knowing that $X = f \frac{x'}{Z'}$, we can substitute this into the previous equation to obtain:
-\begin{equation*}
-    \frac{X'}{Z'+f} = f \frac{Z'}{Z'(Z + f)}
-\end{equation*}
-Rearranging the equation, we get:
-\begin{equation*}
-    X' =  f \frac{X'(Z + f)}{Z'(Z + f)}
-\end{equation*}
-We can simplify the $X'$ term on both sides of the equation, which leads to:
-\begin{equation*}
-    Z' (f + Z) = fZ + f^2
-\end{equation*}
-Where $Z = u - f$ and $Z' = v - f$. Substituting these values into the previous equation, we end up with the textit{thin lens equation}:
-\begin{equation}
-    \label{eq:thin_lens_equation}
-    \frac{1}{f} = \frac{1}{u} + \frac{1}{v}
-\end{equation}
-This equation describes the relationship between the focal length of the lens, the distance of the object from the lens, and the distance of the image plane from the lens. 
-We can notice that if the object is goes to infinity ($u \rightarrow \infty$), then the image plane is located at the focal length of the lens ($v = f$).
-
-\subsubsection{Focus}
-If we move the image plane (changing $v$), the point $P'$ will be projected to a different point on the image plane, which means that the objects in the scene will be out of focus.
-On the other hand, if $P$ is moved, than $u$ also changes, which means that the image plane will need to be moved in order to keep the objects in focus.
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.5\textwidth]{../media/models/focus.png}
-    \caption{Focus and out of focus objects.}
-\end{figure}
-In these cases, instead of a single point $P'$ on the image plane, we will have a \textbf{blur circle} of diameter $b$, 
-which is the area on the image plane where the rays of light from the same point $P$ are projected when they are out of focus.
-
-When capturing an image, we first need to define the acceptable level of blur, which is determined by the size of the blur circle $b$.
-Once this is defined, we can use the thin lens equation to determine the range of distances from the camera where objects will be in focus, which is known as the \textbf{depth of field}.
-
-Using the thin lens equation, we can derive the following formulation for the depth of field, 
-which describes the range of distance for the image plane $v'$ where the objects will be in focus,
-in terms of the object distance $u$, the focal length $f$, and the acceptable blur circle diameter $b$:
-\begin{equation*}
-    \begin{cases}
-        v' = \frac{a + b}{a} v  \\\\
-        v'' = \frac{a - b}{a} v
-    \end{cases}
-\end{equation*}
-The depth of field is then given by the difference between $v'$ and $v''$.
-
-Given this formulation and the value of the acceptable blur circle diameter $b$, we can determine the range of distances from the camera where objects will be in focus.
-This is important for computer vision applications, to ensure that the objects of interest in the scene are captured in focus.
-It is defined as:
-\begin{equation*}
-    \begin{cases}
-        u_n = \frac{u(a+b)}{a+ \frac{bu}{f}} \\\\
-        u_r = \frac{u(a-b)}{a- \frac{bu}{f}}
-    \end{cases}
-\end{equation*}
-
-We can notice that:
-\begin{itemize}
-    \item If $f$ becomes smaller $u_r$ becomes larger, which means that the object can be further away from the camera and still be in focus;
-    \item If $u \rightarrow \infty$ then rays of light from the object are parallel to each other, which means that the image plane is located 
-    at the focal length of the lens ($v = f$), and thus, all objects will be in focus.
-\end{itemize}
-
-\subsubsection{Autofocus}
-Modern cameras use autofocus systems to automatically adjust the position of the image plane in order to keep the objects in focus.
-We can distinguish between two types of autofocus systems:
-\begin{itemize}
-    \item \textbf{Active autofocus}: the camera emits a signal (e.g., infrared light) and measures the time it takes for the signal to bounce back from
-    the objects in the scene, which allows it to estimate the distance of the objects and adjust the focus accordingly. This method faces problems
-    in case of far objects, obstacles or glossy surfaces, which can reflect the signal in unexpected ways.
-    \item \textbf{Passive autofocus}: the camera analyzes the image itself to determine the level of focus, and adjusts the position of the image plane accordingly.
-    Usually, the camera will try to analyze the edges in the image, since they are more affected by blur.
-\end{itemize}
-High quality cameras use a combination of both active and passive autofocus systems to ensure that the objects in the scene are captured in focus, 
-regardless of the distance or lighting conditions.
-
-\subsubsection{Resolution, Blur and Resolving Power}
-A camera with a $N \times M$ pixel sensor can detect at most $\frac{N}{2}$ horizontal lines (one pixel must be left between two lines to distinguish them).
-If the blur is larger than the distance between two lines, then the camera will not be able to distinguish them, leading to a loss of detail in the image.
-
-We define the \textbf{resolving power} of a camera as the maximum number of lines per unit distance that the camera can distinguish, which is given by the formula:
-\begin{equation}
-    R_p = \frac{1}{2\Delta}
-\end{equation}
-where $\Delta$ is the spacing between two lines that the camera can distinguish.
-
-\paragraph{Example}
-Consider a camera sensor of size $36mm \times 24mm$, with a resolution of $4000 \times 2500$ pixels.
-We can calculate the spacing between two lines that the camera can distinguish as follows:
-\begin{equation*}
-    R_p = \frac{1}{2\Delta} \text{where } \Delta = \frac{\text{sensor size}}{\text{resolution}}
-\end{equation*}
-Calculating $\Delta$ for the vertical direction:
-\begin{equation*}
-    \Delta = \frac{24mm}{2500} \approx 0.01mm
-\end{equation*}
-Thus, the resolving power is:
-\begin{equation*}
-    R_p = \frac{1}{2 \times 0.01mm} = 50 \text{ lines/mm}
-\end{equation*}
-This means that the camera can distinguish up to 50 lines per millimeter, which is a measure of the level of detail that the camera can capture in the image.
-
-Assuming we now want to capture an object in the real world. In particular, we have a focal length of $f = 50mm$ and a distance of the object from the camera of $u = 5000mm$. 
-We want to compute the minimum size of the object that can be distinguished by the camera.
-
-First, we can notice that the rays of light from the object are parallel to each other, which means that rays of light coming from adjacent lines have an angle $\theta$
-separating them.
-In order to distinguish between two lines, the spacing between pixel lines must be greater than $2 \Delta$. We can write that:
-\begin{equation*}
-    2 \Delta = f \sin(\theta) \approx f \theta
-\end{equation*}
-Given the focal length $f$, we can calculate the angle $\theta$ as follows:
-\begin{equation*}
-    \theta = \frac{2 \Delta}{f} = \frac{2 \Delta}{50mm} = 0.0004 \text{ radians}
-\end{equation*}
-Now, we can calculate the minimum size of the object that can be distinguished by the camera using the formula:
-\begin{equation*}
-    \text{object size} = u \tan(\theta) \approx u \theta
-\end{equation*}
-Substituting the values, we get:
-\begin{equation*}
-    \text{object size} = 5000mm \times 0.0004 = 2mm
-\end{equation*}
-This means that the camera can distinguish objects that are at least 2mm in size at a distance of 5000mm, given the focal length and resolution of the camera.
-
-\subsubsection{Typical Issues}
-There are several issues that can arise when using lenses, which can affect the quality of the image and the performance of computer vision algorithms. 
-Some of these issues include:
-\begin{itemize}
-    \item \textbf{Barrel distortion}: caused by wide-angle lenses, where straight lines appear to curve outward from the center of the image;
-    \item \textbf{Chromatic aberration}: typically related to bad lenses, where different wavelengths are threatened differently, 
-    resulting in color fringing around the edges of objects in the image;
-    \item \textbf{Vignetting}: caused by cheap or dirty lenses, where the corners of the image appear darker than the center due to light falloff.
-\end{itemize}
+If $s \cdot n \le 0$, the normal points away from the light source, meaning the point is in shadow and not illuminated.
