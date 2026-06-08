@@ -1,0 +1,114 @@
+\section{Images and Videos}
+Before introducing the concepts of images and videos, we first need to define the concept of a \textbf{signal}, how to represent it, and how to process it.
+
+\subsection{The Processing Chain}
+The \textbf{processing chain} of an image starts in the real world with a physical signal we want to capture. This signal goes through the following steps:
+\begin{itemize}
+    \item \textbf{Acquisition}: The process of transforming a real-world physical signal into a digital one by means of a \textbf{sensor}. In this process, we essentially project a portion of the real 3D world onto a 2D plane. This process is inherently affected by \textbf{noise} from the sensor, the environment, etc., which can be modeled as an additive component to the signal.
+    \item \textbf{Enhancement}: The process of applying transformations or \textbf{filters} to the digital signal to make the picture more suitable for our specific goals (e.g., noise reduction, contrast enhancement).
+    \item \textbf{High-level Processing}: The extraction of useful information from the signal. This is where Computer Vision algorithms come into play to apply intelligent processing (e.g., object detection, tracking, segmentation).
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \scalebox{0.8}{
+        \input{Tikz/image-videos/processing-chain.tex}
+    }
+    \caption{Processing chain of an image.}
+\end{figure}
+
+
+\subsection{Acquisition and Digitization}
+To process an image on a computer, the continuous physical signal must be converted into a discrete digital format. 
+When talking about images, the sensor is typically a camera that captures light intensity, wavelength (color), or temperature. 
+Digitalization requires two fundamental steps: \textbf{sampling} and \textbf{quantization}.
+
+\subsubsection{Sampling}
+To transform a real-world continuous signal into a digital one, we must sample it. 
+For video signals, sampling occurs across three dimensions: the two spatial dimensions ($x$ and $y$) and the temporal dimension ($t$).
+
+\begin{figure}[H]
+    \centering
+    \scalebox{0.8}{
+        \input{Tikz/image-videos/sampling.tex}
+    }
+     \caption{Spatio-temporal sampling of a video signal.}
+\end{figure}
+
+This process is called \textbf{spatio-temporal sampling}, transforming a continuous signal $s_c(x,y,t)$ into a discrete signal $s(m,n,k)$, where $m$, $n$, and $k$ are the indices of the spatial and temporal dimensions.
+
+\subsubsection{Quantization}
+Once we have a discrete spatial signal, we must quantize it, meaning we assign a finite number of values to represent the light intensity at each sampled point. 
+
+The most common quantization uses 8 bits per pixel (bpp), which allows for 256 different values per channel. 
+This is an excellent compromise between image quality and memory storage (exactly one byte per pixel channel). 
+Using fewer than 8 bpp often results in a loss of quality, introducing a visual artifact known as \textbf{contouring}.
+
+After quantization, pixel values are typically represented as integers in the range $[0,255]$, where 0 represents no intensity (black) and 255 represents maximum intensity.
+
+\subsubsection{Digital Images}
+The output of the sampling and quantization processes is a 2D matrix of \textbf{pixels}. A digital image is essentially a collection of 2D coordinates, where each pixel represents the projection of a real-world point and the quantized intensity of the light that hit the sensor at that location.
+
+Pixels are numbered starting from the top-left corner. The value of a pixel at position $(c,r)$ for a given image $I$ is denoted as $I(c,r)$, where $c$ is the column index and $r$ is the row index. For grayscale images, a pixel carries a single value. For color images, it carries a tuple of values (e.g., Red, Green, Blue).
+
+
+\subsection{Color Representation}
+Color is a perceptual attribute that humans associate with objects, mathematically defined as a combination of different \textbf{wavelengths} of light. 
+
+\subsubsection{Acquiring Color: The Bayer Pattern}
+To create a color image, a camera sensor must capture light information for multiple color components. The perfect physical solution would be using three separate sensors (one for red, green, and blue), but this is expensive and impractical.
+
+Instead, cameras use a \textbf{Bayer pattern}, a mosaic of color filters placed directly over a single sensor. The filters are arranged to mimic the human eye's natural sensitivities:
+\begin{itemize}
+    \item \textbf{50\% Green}: To capture luminance information, to which the human eye is most sensitive.
+    \item \textbf{25\% Red}: To capture red wavelength information.
+    \item \textbf{25\% Blue}: To capture blue wavelength information.
+\end{itemize}
+This pattern allows the camera to capture color in a single shot, interpolating the missing colors for each pixel afterward.
+
+\subsubsection{The RGB Color Space}
+The most common digital representation of color is \textbf{RGB} (Red, Green, Blue). This is an \textit{additive color model}: starting from a black image (no light), we add different intensities of red, green, and blue to create a wide spectrum of colors. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{../media/image-videos/RGB.png}
+    \caption{Additive color model.}
+\end{figure}
+\textit{Note:} The opposite approach is the \textit{subtractive color model} (CMY/CMYK), where we start with white (like a piece of paper) and subtract light by applying cyan, magenta, and yellow pigments.
+
+\paragraph{Limitations of RGB}
+While intuitive for hardware (like monitors), RGB is not optimal for image processing. The human eye is vastly more sensitive to luminance (brightness) than to chrominance (color variations). 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{../media/image-videos/eye-sensitivity.png}
+    \caption{Sensitivity of the human eye to different colors.}
+\end{figure}
+
+Because RGB mixes luminance and chrominance across all three channels, the R, G, and B components are highly correlated. This redundancy makes RGB inefficient for tasks like compression or human-centric image processing.
+
+\subsubsection{Alternative Color Spaces}
+
+\paragraph{YCbCr (Used for Compression)}
+The \textbf{YCbCr} space separates luminance ($Y$) from color information ($Cb$ and $Cr$). Because humans are less sensitive to color detail, we can heavily compress (down-sample) the $Cb$ and $Cr$ channels without noticeably degrading the image quality. This principle is the backbone of JPEG and MPEG compression standards.
+
+\begin{figure}[H]
+    \centering
+    \scalebox{0.8}{
+        \input{Tikz/image-videos/YCbCr.tex}
+    }
+    \caption{YCbCr compression example.}
+\end{figure}
+As shown above, by down-sampling the $Cb$ and $Cr$ components by a factor of 2, we halve the data size with almost zero perceived loss in quality.
+
+\paragraph{HSV (Used for Processing and Graphics)}
+The \textbf{HSV} (Hue, Saturation, Value) model separates the base color (Hue) from its intensity (Value) and its purity/vibrancy (Saturation). This mimics how humans intuitively describe color, making it highly effective for computer graphics, artistic editing, and computer vision tasks like color-based object tracking.
+
+\subsection{Videos}
+While static images provide information about static scenes, they lack motion information such as temporal evolution and dynamic interactions.
+Videos capture a sequence of images over time, providing a richer representation of the world.
+
+A video can be seen as a sequence of 2D images, that represent the projection of a \textbf{moving} 3D scene onto the video camera sensor.
+Usually videos have a lower resolution than images, as they would be too heavy to store and transmit otherwise. Each second of video is composed by a certain number of frames
+(typically 24, 30 or 60), and each frame is a 2D image. For videos lasting several minutes, the amount of data can be huge.
+Also, the information carried by videos is mostly given by the motion, and not by the color information.
