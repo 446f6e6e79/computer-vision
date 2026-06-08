@@ -1,23 +1,14 @@
 \section{Images and Videos}
-Before introducing the concept of images and videos, we first need to define
-the concept of \textbf{signal}, how to represent it and how to process it.
+Before introducing the concepts of images and videos, we first need to define the concept of a \textbf{signal}, how to represent it, and how to process it.
 
-\subsection{Processing Chain}
-The \textbf{processing chain} of an image can be represented by the following steps:
+\subsection{The Processing Chain}
+The \textbf{processing chain} of an image starts in the real world with a physical signal we want to capture. This signal goes through the following steps:
 \begin{itemize}
-    \item \textbf{Acquisition}: The process of transforming a real-world physical signal into
-    a digital one, by means of a \textbf{sensor}. In this process, we essentially transfer
-    a portion of the real 3D world into a 2D image.
-    This process is affected by \textbf{noise}, which can be added by both the real world
-    and the sensor itself.
-
-    Once the signal is acquired, it is transformed using a standard format to a discrete signal,
-    by applying both a \textbf{sampling} and a \textbf{quantization} process.
-    \item \textbf{Enhancement}: The process of applying a transformation to the signal,
-    by applying a \textbf{filter} to it, in order to make the picture more suitable for our goal.
-    \item \textbf{High-level processing}: The process of extracting information from the signal. This
-    is what we will see in the next chapters.
+    \item \textbf{Acquisition}: The process of transforming a real-world physical signal into a digital one by means of a \textbf{sensor}. In this process, we essentially project a portion of the real 3D world onto a 2D plane. This process is inherently affected by \textbf{noise} from the sensor, the environment, etc., which can be modeled as an additive component to the signal.
+    \item \textbf{Enhancement}: The process of applying transformations or \textbf{filters} to the digital signal to make the picture more suitable for our specific goals (e.g., noise reduction, contrast enhancement).
+    \item \textbf{High-level Processing}: The extraction of useful information from the signal. This is where Computer Vision algorithms come into play to apply intelligent processing (e.g., object detection, tracking, segmentation).
 \end{itemize}
+
 \begin{figure}[H]
     \centering
     \scalebox{0.8}{
@@ -26,13 +17,15 @@ The \textbf{processing chain} of an image can be represented by the following st
     \caption{Processing chain of an image.}
 \end{figure}
 
-\subsection{Digital Images}
-A digital image can be seen as a collection of 2D coordinates, called \textbf{pixels} (picture elements).
-Each pixel represents a portion of the real world and can be \textbf{gray-scale} (black and white, 1 channel) or \textbf{color} (typically 3 channels).
+
+\subsection{Acquisition and Digitization}
+To process an image on a computer, the continuous physical signal must be converted into a discrete digital format. 
+When talking about images, the sensor is typically a camera that captures light intensity, wavelength (color), or temperature. 
+Digitalization requires two fundamental steps: \textbf{sampling} and \textbf{quantization}.
 
 \subsubsection{Sampling}
-As we said before, to transform a real-world signal into a digital one, we need to apply a sampling process.
-When considering video signals, they need to be sampled in all three dimensions: the two spatial dimensions ($x$ and $y$) and the temporal dimension ($t$).
+To transform a real-world continuous signal into a digital one, we must sample it. 
+For video signals, sampling occurs across three dimensions: the two spatial dimensions ($x$ and $y$) and the temporal dimension ($t$).
 
 \begin{figure}[H]
     \centering
@@ -41,49 +34,64 @@ When considering video signals, they need to be sampled in all three dimensions:
     }
      \caption{Spatio-temporal sampling of a video signal.}
 \end{figure}
-This process is called \textbf{spatio-temporal sampling}, and it transforms a continuous signal $s_c(x,y,t)$ into a discrete 
-one $s(m,n,k)$, where $m$, $n$ and $k$ are the indices of the spatial and temporal dimensions, respectively.
 
-The output of this process is a 2D matrix of pixels. Once we have this, we can manipulate it using many techniques.
-Pixels are numbered starting from the top-left corner, and the value of 
-a pixel in certain position $(c,r)$ for a given image $I$ is denoted as $I(c,r)$, where $c$ is the column index and $r$ is the row index.
-The value of a pixel is typically normalized in the range $[0,1]$.
+This process is called \textbf{spatio-temporal sampling}, transforming a continuous signal $s_c(x,y,t)$ into a discrete signal $s(m,n,k)$, where $m$, $n$, and $k$ are the indices of the spatial and temporal dimensions.
 
-\subsection{Colors}
-Color is an attribute that humans associate with objects in the real world. 
-Mathematically, we can define it as a combination of different \textbf{wavelengths}. Different representations are used to represent colors; we will discuss the most common ones in the following chapters.
+\subsubsection{Quantization}
+Once we have a discrete spatial signal, we must quantize it, meaning we assign a finite number of values to represent the light intensity at each sampled point. 
 
-\subsubsection{RGB}
-One of the most common representations of colors is the \textbf{RGB} (Red, Green, Blue) one.
-In the \textit{addictive color model}, starting from a black image, we can add different amounts of red, green and blue
-to it, creating a wide range of colors.
+The most common quantization uses 8 bits per pixel (bpp), which allows for 256 different values per channel. 
+This is an excellent compromise between image quality and memory storage (exactly one byte per pixel channel). 
+Using fewer than 8 bpp often results in a loss of quality, introducing a visual artifact known as \textbf{contouring}.
+
+After quantization, pixel values are typically represented as integers in the range $[0,255]$, where 0 represents no intensity (black) and 255 represents maximum intensity.
+
+\subsubsection{Digital Images}
+The output of the sampling and quantization processes is a 2D matrix of \textbf{pixels}. A digital image is essentially a collection of 2D coordinates, where each pixel represents the projection of a real-world point and the quantized intensity of the light that hit the sensor at that location.
+
+Pixels are numbered starting from the top-left corner. The value of a pixel at position $(c,r)$ for a given image $I$ is denoted as $I(c,r)$, where $c$ is the column index and $r$ is the row index. For grayscale images, a pixel carries a single value. For color images, it carries a tuple of values (e.g., Red, Green, Blue).
+
+
+\subsection{Color Representation}
+Color is a perceptual attribute that humans associate with objects, mathematically defined as a combination of different \textbf{wavelengths} of light. 
+
+\subsubsection{Acquiring Color: The Bayer Pattern}
+To create a color image, a camera sensor must capture light information for multiple color components. The perfect physical solution would be using three separate sensors (one for red, green, and blue), but this is expensive and impractical.
+
+Instead, cameras use a \textbf{Bayer pattern}, a mosaic of color filters placed directly over a single sensor. The filters are arranged to mimic the human eye's natural sensitivities:
+\begin{itemize}
+    \item \textbf{50\% Green}: To capture luminance information, to which the human eye is most sensitive.
+    \item \textbf{25\% Red}: To capture red wavelength information.
+    \item \textbf{25\% Blue}: To capture blue wavelength information.
+\end{itemize}
+This pattern allows the camera to capture color in a single shot, interpolating the missing colors for each pixel afterward.
+
+\subsubsection{The RGB Color Space}
+The most common digital representation of color is \textbf{RGB} (Red, Green, Blue). This is an \textit{additive color model}: starting from a black image (no light), we add different intensities of red, green, and blue to create a wide spectrum of colors. 
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.5\textwidth]{../media/image-videos/RGB.png}
-    \caption{Addictive color model.}
+    \caption{Additive color model.}
 \end{figure}
-We can also define the opposite process, called \textit{subtractive color model}. In this model, we start from a white image, 
-and we subtract different amounts of cyan, magenta and yellow to it (the \textbf{primary colors}), creating a wide range of colors.
+\textit{Note:} The opposite approach is the \textit{subtractive color model} (CMY/CMYK), where we start with white (like a piece of paper) and subtract light by applying cyan, magenta, and yellow pigments.
 
-\subsubsection{Problems of RGB}
-The RGB representation is not the optimal one. In fact, if we analyze how the human eye perceives colors,
-we can see that it is a lot more sensitive to some colors than others. For example, we are more sensitive to luminance than to color information,
-and less sensitive to color variations.
-This implies that a lot of information is redundant in the RGB representation, and other representations
-may be more effective.
+\paragraph{Limitations of RGB}
+While intuitive for hardware (like monitors), RGB is not optimal for image processing. The human eye is vastly more sensitive to luminance (brightness) than to chrominance (color variations). 
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.5\textwidth]{../media/image-videos/eye-sensitivity.png}
     \caption{Sensitivity of the human eye to different colors.}
 \end{figure}
 
-Also, if we take an RGB image and separate its three components, we can see that they are highly correlated, 
-meaning that they contain a lot of redundant information. This is also not ideal for image processing tasks.
+Because RGB mixes luminance and chrominance across all three channels, the R, G, and B components are highly correlated. This redundancy makes RGB inefficient for tasks like compression or human-centric image processing.
 
-\subsubsection{YCbCr}
-The \textbf{YCbCr} representation is a color space that separates the luminance (Y) from the color information (Cb and Cr). 
-This representation is more suitable for image compression (used in JPEG and MPEG standards) and transmission, as it allows 
-to reduce the amount information, without losing too much quality to the human eye.
+\subsubsection{Alternative Color Spaces}
+
+\paragraph{YCbCr (Used for Compression)}
+The \textbf{YCbCr} space separates luminance ($Y$) from color information ($Cb$ and $Cr$). Because humans are less sensitive to color detail, we can heavily compress (down-sample) the $Cb$ and $Cr$ channels without noticeably degrading the image quality. This principle is the backbone of JPEG and MPEG compression standards.
+
 \begin{figure}[H]
     \centering
     \scalebox{0.8}{
@@ -91,37 +99,10 @@ to reduce the amount information, without losing too much quality to the human e
     }
     \caption{YCbCr compression example.}
 \end{figure}
-As we can see from the figure, by down-sampling the Cb and Cr components by a factor of 2, we can reduce the size of the image in half,
-without any noticeable difference in quality to the human eye.
+As shown above, by down-sampling the $Cb$ and $Cr$ components by a factor of 2, we halve the data size with almost zero perceived loss in quality.
 
-\subsubsection{HSV}
-The \textbf{HSV} (Hue, Saturation, Value) representation is another color space that separates the hue (H) from the saturation (S) and value (V).
-This representation is more suitable for computer graphics and image processing.
-
-\subsubsection{Bayer Pattern}
-In the acquisition process, the sensor of a camera must be able to capture the light information for all the tree components in order
-to create a color image. The perfect solution would be to have three different sensors, one for each color component, but this is not practical and too expensive.
-
-The most common solution is to use a \textbf{Bayer pattern}, which is a mosaic of color filters that are placed on top of the sensor.
-They are arranged in a specific pattern, to correctly exploit the sensitivity of the human eye to different colors. The pattern is composed as follows:
-\begin{itemize}
-    \item 50\% of the pixels are green, to capture the luminance information, which is the most important for the human eye.
-    \item 25\% of the pixels are red, to capture the red color information.
-    \item 25\% of the pixels are blue, to capture the blue color information.
-\end{itemize}
-This pattern allows to capture the color information in a single shot, without the need for multiple sensors, and it is widely used in digital cameras.
-
-\subsubsection{Quantization}
-Once we have the discrete signal, we need to quantize it, meaning that we need to assign a finite number of values to the pixel values.
-The most common quantization is to use 8 bits per pixel (bpp), which allows to represent 256 different values for each channel.
-
-This is a good compromise between the quality of the image and the amount of data that we need to store and transmit, while
-also being handy for processing, as each pixel value can be represented by only one byte of memory.
-Using less than 8 bpp would result in a loss of quality, introducing the problem of \textbf{contouring}.
-
-After quantization, we can represent the pixel values as integers in the range $[0,255]$, where 0 represents black and 255 represents the maximum intensity of the color.
-For colored images, we can represent the pixel values as a tuple of three integers, one for each channel (R, G, B), in the range $[0,255]$.
-
+\paragraph{HSV (Used for Processing and Graphics)}
+The \textbf{HSV} (Hue, Saturation, Value) model separates the base color (Hue) from its intensity (Value) and its purity/vibrancy (Saturation). This mimics how humans intuitively describe color, making it highly effective for computer graphics, artistic editing, and computer vision tasks like color-based object tracking.
 \subsection{Videos}
 While static images provide information about static scenes, they lack motion information
 such as temporal evolution and dynamic interactions.
