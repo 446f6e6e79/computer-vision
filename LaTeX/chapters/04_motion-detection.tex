@@ -53,37 +53,6 @@ Motion detection is a fundamental task in computer vision, and it has many appli
 \end{itemize}
 In general, it is used to detect changes of the image intensity, in the scene over time.
 
-\subsection{Problems}
-The motion detection task is quite challenging, and the solution might be \textbf{not unique}.
-
-In fact, the motion is based on the \textbf{velocity} of the points in the scene, over two frames. This might not reflect the actual motion of the objects in the scene,
-as it might also be caused by \textbf{camera motion} or by \textbf{illumination changes}.
-
-\subsubsection{Real vs Apparent movement}
-Also, being the motion perceived by changes in the scene, we could have two possible situations for which the motion field is not reflecting the actual motion of the objects in the scene:
-\begin{itemize}
-    \item \textbf{Constant illumination}, in which a sphere is moving in the scene (rotating around its own axis), but the illumination is constant.
-    In this case, the motion field will be zero, as there are no changes in the image intensity, even though the sphere is moving.
-    \item \textbf{Changing illumination}, in which the sphere is not moving, but the illumination source rotates around the sphere. 
-    In this case, the motion field will be non-zero, as there are changes in the image intensity, even though the sphere is not moving.
-\end{itemize}
-
-\subsubsection{Occlusion}
-Another non-trivial problem is the occlusion. This problem occurs when an object in the background is partially or completely occluded by an object in the foreground.
-This can cause problems in the motion detection, as a static background might be perceived as moving, due to the occlusion of the foreground object.
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.7\textwidth]{../media/motion-detection/occlusion.png}
-    \caption{Example of occlusion.} 
-\end{figure}
-
-\subsubsection{Aperture}
-Not all motion can be detected by analyzing the changes in the image intensity. In fact, only displacements
-of the borders of the objects can be detected, while the motion of the internal points of the objects cannot be detected.
-
-Also, borders can only detect the motion in the direction perpendicular to the border itself (in the direction of the intensity gradient), 
-while for angles, we can detect motion in both directions.
-
 \subsection{Optical Flow}
 The motion detection we have described so far can be formalized trough the concept of \textbf{optical flow}.
 
@@ -107,7 +76,7 @@ as long as the motion is small enough. This is the brightness constancy assumpti
 
 The Taylor expansion states that for a function $f(x + \Delta x)$, we can approximate it as:
 \begin{equation*}
-    f(x + \Delta x) \approx f(x) + \frac{\partial f}{\partial x} \Delta x
+    f(x + \Delta x) \approx f(x) + \frac{\partial f(x)}{\partial x} \Delta x
 \end{equation*}
 By applying the Taylor expansion to the left-hand side of the equation \ref{eq:optical_flow}, we get:
 \begin{equation*}
@@ -128,8 +97,41 @@ By defining the velocity of the point as $v_x = \frac{\Delta x}{\Delta t}$ and $
 This implies that the variation of the intensity of a point in the image plane is related to the velocity of the point in the image plane. 
 
 If we decompose the velocity into its components (normal and tangential with respect to the surface of the object),
-we can see that only the normal component of the velocity can be detected, since the tangential component does not cause any change in the intensity of the point. 
-This is the aperture problem we have discussed before.
+we can see that only the normal component of the velocity can be detected, since the tangential component does not cause any change in the intensity of the point.
+If we think about this from a practical point of view, this means that we can only detect the motion of the borders of the objects, while the motion of the internal points 
+of the objects cannot be detected as they would replace the same intensity values in the image plane, and therefore they would not cause any change in the intensity of the point.
+This is the aperture problem, a very well-known issue of the optical flow, which is detailed in the challenges below.
+
+\subsection{Problems and Challenges}
+The motion detection task is quite challenging, and the solution might be \textbf{not unique}.
+
+In fact, the motion is based on the \textbf{velocity} of the points in the scene, over two frames. This might not reflect the actual motion of the objects in the scene,
+as it might also be caused by \textbf{camera motion} or by \textbf{illumination changes}.
+
+\subsubsection{Aperture}
+Not all motion can be detected by analyzing the changes in the image intensity. In fact, only displacements
+of the borders of the objects can be detected, while the motion of the internal points of the objects cannot be detected.
+
+Also, borders can only detect the motion in the direction perpendicular to the border itself (in the direction of the intensity gradient), 
+while for angles, we can detect motion in both directions.
+
+\subsubsection{Real vs Apparent movement}
+Also, being the motion perceived by changes in the scene, we could have two possible situations for which the motion field is not reflecting the actual motion of the objects in the scene:
+\begin{itemize}
+    \item \textbf{Constant illumination}, in which a sphere is moving in the scene (rotating around its own axis), but the illumination is constant.
+    In this case, the motion field will be zero, as there are no changes in the image intensity, even though the sphere is moving.
+    \item \textbf{Changing illumination}, in which the sphere is not moving, but the illumination source rotates around the sphere. 
+    In this case, the motion field will be non-zero, as there are changes in the image intensity, even though the sphere is not moving.
+\end{itemize}
+
+\subsubsection{Occlusion}
+Another non-trivial problem is the occlusion. This problem occurs when an object in the background is partially or completely occluded by an object in the foreground.
+This can cause problems in the motion detection, as a static background might be perceived as moving, due to the occlusion of the foreground object.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{../media/motion-detection/occlusion.png}
+    \caption{Example of occlusion.} 
+\end{figure}
 
 \subsection{Motion Detection in practice}
 There are two main approaches to motion detection in practice:
@@ -140,9 +142,8 @@ There are two main approaches to motion detection in practice:
 \end{itemize}
 
 \subsubsection{Change Detection}
-The change detection is a simple approach to motion detection. 
-It takes as input two frames of a video, taken at different time instants, and it computes the difference between the two frames.
-This can be done by simply following the following steps:
+The change detection is a simple approach to motion detection. It takes as input two frames of a video, taken at different time instants $K$ and $K-1$, 
+and it computes the difference between the two frames. This can be done by simply following the following steps:
 \begin{itemize}
     \item \textbf{Subtraction}: we compute the difference between the two frames, pixel by pixel.
     The resulting image will have high intensity values in the areas where there is a change in the intensity, and low intensity values in the areas where there is no change.
@@ -178,7 +179,7 @@ The background subtraction is a more sophisticated approach to motion detection.
 It is based on the idea of modeling the background of the scene as a static image (acquired a priori).
 
 The algorithm can be formalized as follows:
-\begin{algorithm}
+\begin{algorithm}[H]
     \caption{Background subtraction algorithm}
     \label{alg:bg_subtraction}
     \begin{algorithmic}[1]
@@ -193,7 +194,7 @@ This allows for a better representation of the moving objects in the scene, as i
 but it has a few limitations, such as:
 \begin{itemize}
     \item \textbf{Modelling the background}: the background model might not be accurate, especially in case of dynamic backgrounds;
-    \item \textbf{Changes in the background}: if a background object starts moving, both the real object and its "ghost" will be detected as moving objects;
+    \item \textbf{Changes in the background}: if a background object starts moving, both the real object and its "ghost" (since the background model is not updated) will be detected as moving objects;
     \item \textbf{Illumination changes}: if the illumination changes, the background model is not able to adapt to it as it is based on a static image;
     \item \textbf{Camera motion}: if the camera is moving, again the background model is not able to adapt to it.
 \end{itemize}
@@ -212,8 +213,8 @@ Where $\alpha$ is a parameter that controls the update rate of the background mo
 \end{itemize}
 
 \subsubsection{Gaussian Average}
-Instead of relying on a single background model, we can use a Gaussian Model to represent the background.
-In this approach, we model the background as a Gaussian distribution, and we update the parameters of the distribution over time,
+Instead of relying on a single background model, we can use a Gaussian Model to represent each pixel in the background.
+In this approach, we model each pixel as a Gaussian distribution, and we update the parameters $(\mu, \sigma^2)$ of the distribution over time,
 with the same approach of the adaptive background subtraction. 
 
 We can formalize the Gaussian model as follows:
@@ -235,7 +236,7 @@ Where $k$ is the threshold parameter, and $\sigma_t$ is the standard deviation o
 Even though the model is constantly updated, usually an initialization phase is required, in which the background model is learned from a sequence of frames. This allows to have a more accurate
 representation of the background, and to reduce the number of false positives in the motion detection.
 
-\subsubsection{Improving the Gaussian Average}
+\paragraph{Improving the Gaussian Average}
 From the equation \ref{eq:gaussian_update} of the Gaussian average, we can see that the update of the mean is based on both
 background and foreground pixels, with no distinction between them.
 
@@ -265,7 +266,13 @@ Where:
     \item $w_{i,t}$ is the weight of the $i$-th Gaussian distribution at time $t$, which represents the importance of the $i$-th mode of the background at time $t$;
     \item $\mathcal{N}(X_t | \mu_i, \Sigma_i)$ is the Gaussian distribution with mean $\mu_i$ and covariance $\Sigma_i$.
 \end{itemize}
-By assuming that each color channel is independent, we can simplify the model by using a diagonal covariance matrix, which reduces the number of parameters to be estimated.
+We can make two assumptions to simplify the model:
+\begin{itemize}
+    \item \textbf{Independence of the color channels}: we can assume that each color channel is independent from the others. Therefore,
+    the covariance matrix $\Sigma_i$ can be simplified to a diagonal matrix, which reduces the number of parameters to be estimated.
+    \item \textbf{Equal variances}: we can also assume that all the channels have the same variance. This way, we can replace the covariance matrix $\Sigma_i$ from the model,
+    in favor of a single variance $\sigma_i^2$.
+\end{itemize}
 
 \paragraph{Identify each Distribution}
 Once we have defined the $K$ Gaussian distributions, we need to rank them based on their weights $w_{i,t}$, amplitude and standard deviation, to determine which distributions represent the background and which distributions represent the foreground.

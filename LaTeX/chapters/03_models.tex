@@ -69,40 +69,76 @@ The pinhole camera model has several important features:
     \item The model assumes that the pinhole is infinitely small, which is an idealization. This would require an infinite amount of light to pass through to create a visible image, which is not practical.
 \end{itemize}
 
-% ---------------------------------------------------------
-% LENSES MOVED HERE: Logical progression from Pinhole limitations
-% ---------------------------------------------------------
 \subsection{Lenses}
-Up until now, we have assumed that our cameras were pinhole cameras, which is not the case in the real world. In reality, cameras use \textbf{lenses} to focus light onto the image plane. This allows a wider set of light rays from the same point $P$ to merge at point $P'$ on the image plane, creating a brighter image without losing sharpness—provided the distances obey the \textit{thin lens equation}.
+Up until now, we have assumed that our cameras were pinhole cameras, which is not the case in the real world. 
+In reality, cameras use \textbf{lenses} to focus light onto the image plane. 
+This allows a wider set of light rays from the same point $P$ to merge at point $P'$ on the image plane, creating a brighter 
+image without losing sharpness—provided the distances obey the \textit{thin lens equation}.
 
 \subsubsection{Thin Lens Equation}
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.5\textwidth]{../media/models/thin_lens.png}
     \caption{Thin Lens model.}
+    \label{img:thin-lens-eq}
 \end{figure}
 
-Suppose we have an object at distance $u$ from the lens, and an image plane at distance $v$ from the lens. Let $X$ be the object height and $X'$ be the projected image height. By considering the similar triangles formed by rays passing through the optical center, we have:
+Suppose that the origin of the coordinate system is at the lens center $C$, that 
+we have an object at distance $u$ from the lens, and an image plane at distance $v$ from the lens. 
+Let $X$ be the object height and $X'$ be the projected image height. 
+By considering the similar triangles formed by rays passing through the optical center, we have:
 \begin{equation}
     \frac{X}{u} = \frac{X'}{v}
 \end{equation}
-Considering a second ray passing through the focal point $F$ (at distance $f$ from the lens):
+
+Let $Z$ be the distance from the object to the object-side focal point, and $Z'$ be the distance from the image-side focal point to the image plane. 
+We can then rewrite $u$ as $u = Z + f$, and $v$ as $v = Z' + f$. Substituting these into the equation gives:
 \begin{equation}
-    \frac{X}{u - f} = \frac{X'}{f}
+    \frac{X}{Z + f} = \frac{X'}{Z' + f}
 \end{equation}
-Equating the ratios for $\frac{X}{X'}$, we get:
+
+By considering the similar triangles formed by the ray parallel to the optical axis (which subsequently passes through the focal point on the image side), 
+we obtain the relation $\frac{X}{f} = \frac{X'}{Z'}$, which can be rearranged as:
 \begin{equation*}
-    \frac{u}{v} = \frac{u - f}{f}
+    X = \frac{f X'}{Z'}
 \end{equation*}
-Cross-multiplying yields $uf = v(u - f) \implies uf = vu - vf$. Dividing all terms by $uvf$, we arrive at the \textit{thin lens equation}:
+
+Substituting $X$ back into our earlier equation:
+\begin{equation*}
+    \frac{fX'}{Z'(Z + f)} = \frac{X'}{Z' + f}
+\end{equation*}
+
+We can cancel out the $X'$ terms and rearrange the equation to get:
+\begin{align*}
+    f(Z' + f) &= Z'(Z + f) \\
+    fZ' + f^2 &= Z'Z + fZ'
+\end{align*}
+
+Subtracting $fZ'$ from both sides yields Newton's lens equation:
+\begin{equation}
+    \label{eq:thin_lens_equation_2}
+    ZZ' = f^2
+\end{equation}
+
+Since $Z = u - f$ and $Z' = v - f$, we can substitute these back into equation \ref{eq:thin_lens_equation_2}:
+\begin{align*}
+    (u - f)(v - f) &= f^2 \\
+    uv - uf - vf + f^2 &= f^2 \\
+    uv &= f(u + v)
+\end{align*}
+
+Dividing both sides by $uvf$, we derive the \textbf{thin lens equation}:
 \begin{equation}
     \label{eq:thin_lens_equation}
     \frac{1}{f} = \frac{1}{u} + \frac{1}{v}
 \end{equation}
+
 This equation describes the relationship between the focal length $f$, the object distance $u$, and the image plane distance $v$. If the object goes to infinity ($u \rightarrow \infty$), the image plane must be located exactly at the focal length ($v = f$).
 
 \subsubsection{Focus \& Depth of Field}
-If we move the image plane (changing $v$), the point $P'$ will project to a different area, meaning the objects will be out of focus. Similarly, if $P$ moves (changing $u$), the image plane must be adjusted to keep the object in focus.
+The set of parameters $(u, v)$ that satisfy the thin lens equation allows us to focus on objects at different distances.
+If we move the image plane (changing $v$), the point $P'$ will project to a different area, meaning the objects will be out of focus. 
+Similarly, if $P$ moves (changing $u$), the image plane must be adjusted to keep the object in focus.
 
 \begin{figure}[H]
     \centering
@@ -110,9 +146,13 @@ If we move the image plane (changing $v$), the point $P'$ will project to a diff
     \caption{Focus and out-of-focus objects.}
 \end{figure}
 
-When out of focus, instead of a single point $P'$, we get a \textbf{blur circle} of diameter $b$. We must define an acceptable level of blur. Using the thin lens equation, we can determine the range of distances where objects remain acceptably sharp, known as the \textbf{depth of field}.
+When out of focus, instead of a single point $P'$, we get a \textbf{blur circle} of diameter $b$.
 
-Let $a$ be the lens aperture diameter. The range of acceptable image plane distances is:
+Obviously, since we are usually not working with a single point, but with an extended object, we cannot have all points in focus at the same time.
+We must define a priori an acceptable level of blur. Using the thin lens equation, we can determine the range of distances where objects remain acceptably sharp, 
+known as the \textbf{depth of field}.
+
+Let $a$ be the lens aperture diameter (the diameter of the lens). The range of acceptable image plane distances is:
 \begin{equation*}
     \begin{cases}
         v' = \frac{a + b}{a} v  \\\\
@@ -167,7 +207,7 @@ The minimum object size is:
 \subsubsection{Typical Lens Issues}
 \begin{itemize}
     \item \textbf{Barrel distortion}: Caused by wide-angle lenses; straight lines curve outward from the center.
-    \item \textbf{Chromatic aberration}: Different wavelengths are refracted differently, resulting in color fringing around edges.
+    \item \textbf{Chromatic aberration}: The same wavelengths are refracted differently, resulting in a missmatch of colors at the edges of objects.
     \item \textbf{Vignetting}: Light falloff causes the image corners to appear darker than the center.
 \end{itemize}
 
@@ -236,24 +276,38 @@ In matrix form:
 \]
 
 \subsection{Illumination Model}
-Once geometry is established, illumination dictates the pixel intensities. Light hitting an object can be \textbf{absorbed}, \textbf{reflected}, or \textbf{transmitted}. Cameras rely purely on reflected light.
+In computer vision, lighting plays a crucial role in determining the appearance of objects in an image. 
+Once geometry is established, illumination dictates the observed pixel intensities. 
+Light hitting an object can be \textbf{absorbed}, \textbf{reflected}, or \textbf{transmitted}. 
+Because standard cameras rely purely on reflected light, modeling surface reflection is a fundamental task.
 
-\subsubsection{Reflection Types}
+\subsubsection{Surface Reflection Types}
+Reflection behavior is governed by surface properties (e.g., roughness, texture, and material) and is generally categorized into two main types:
 \begin{itemize}
-    \item \textbf{Specular}: Energy is concentrated in a specific direction (glossy surfaces).
-    \item \textbf{Diffuse}: Energy is scattered uniformly in all directions (matte surfaces). Observer position is irrelevant.
+    \item \textbf{Specular}: Energy is reflected in a concentrated direction, typical of glossy or mirror-like surfaces. This causes highlights that depend heavily on the observer's viewpoint.
+    \item \textbf{Diffuse}: Energy is scattered uniformly in all directions, characteristic of matte surfaces. The observed intensity is independent of the observer's position.
 \end{itemize}
 
-\subsubsection{Lambertian Reflectance Model}
-Assuming a distant, single light source, rays are parallel. For a perfectly diffuse (Lambertian) surface, the reflected intensity $i$ is proportional to the cosine of the angle $\alpha$ between the \textbf{surface normal} $n$ and the \textbf{light direction} $s$ (Lambert's Cosine Law).
+In computer vision, perfectly diffuse surfaces are generally easier to model and analyze. 
+Glossy surfaces introduce specular highlights, which are view-dependent and can complicate tasks like feature extraction or 3D reconstruction.
+
+\subsubsection{The Lambertian Reflectance Model}
+To simplify illumination modeling, we often assume a \textbf{Lambertian surface} (a perfectly diffuse or matte surface) illuminated by a single, distant point light source. 
+Because the light source is distant, the incoming rays are considered parallel and can be represented by a single directional vector $s$.
+
+According to Lambert's Cosine Law, the reflected intensity $i$ for a perfectly diffuse surface is proportional to the cosine of the angle $\alpha$ between the \textbf{surface normal} vector $n$ and the \textbf{light direction} vector $s$. 
+Since the object reflects light uniformly in all directions, specular components are completely ignored and the observed intensity is independent of the observer's position.
 
 The model is expressed as:
 \begin{equation}
     \label{eq:lambertian_reflectance_model}
     i = \rho (s \cdot n)
 \end{equation}
-which expands to:
-\[ i = \rho \|n\| \|s\| \cos(\alpha)\]
-where $\rho$ is the surface \textit{albedo} (the fraction of reflected light). 
+Expanding the dot product, we get:
+\begin{equation}
+    i = \rho \|n\| \|s\| \cos(\alpha)
+\end{equation}
+where $\rho \in [0, 1]$ represents the surface \textit{albedo} (the inherent fraction of incoming light that the material reflects). If $n$ and $s$ are treated as normalized unit vectors, the equation simplifies to $i = \rho \cos(\alpha)$.
 
-If $s \cdot n \le 0$, the normal points away from the light source, meaning the point is in shadow and not illuminated.
+Additionally, if $(s \cdot n) \le 0$, the surface normal points away from the light source. 
+This means the point is self-shadowed and receives no direct illumination, resulting in an observed intensity of zero.
