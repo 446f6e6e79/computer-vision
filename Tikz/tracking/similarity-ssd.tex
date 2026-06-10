@@ -1,0 +1,56 @@
+\begin{tikzpicture}[scale=0.95]
+    \draw[->] (0,0) -- (8.5,0) node[right] {Bins $(1 \dots 255)$};
+    \draw[->] (0,0) -- (0,4.5) node[above] {Count};
+
+    \draw[blue!70, thick]
+    plot[smooth]
+    coordinates {
+    (0.3,0.6) (1,1.2) (1.8,2.6)
+    (2.7,3.4) (3.6,2.7) (4.5,1.9)
+    (5.4,2.8) (6.3,2.3) (7.2,1.1)
+    (8,0.5)
+    };
+
+    \draw[red!70, thick]
+    plot[smooth]
+    coordinates {
+    (0.3,0.4) (1,1.8) (1.8,2.1)
+    (2.7,2.8) (3.6,3.2) (4.5,2.4)
+    (5.4,2.0) (6.3,2.8) (7.2,1.6)
+    (8,0.3)
+    };
+
+    \fill[orange!55, opacity=0.6]
+    (0.3,0.6)
+    -- plot[smooth]
+    coordinates {
+    (1,1.2) (1.8,2.6)
+    (2.7,3.4) (3.6,2.7)
+    (4.5,1.9)
+    }
+    -- plot[smooth]
+    coordinates {
+    (4.5,2.4) (3.6,3.2)
+    (2.7,2.8) (1.8,2.1)
+    (1,1.8) (0.3,0.4)
+    }
+    -- cycle;
+
+    \fill[orange!55, opacity=0.6]
+    (4.5,1.9)
+    -- plot[smooth]
+    coordinates {
+    (5.4,2.8) (6.3,2.3)
+    (7.2,1.1) (8,0.5)
+    }
+    -- plot[smooth]
+    coordinates {
+    (8,0.3) (7.2,1.6)
+    (6.3,2.8) (5.4,2.0)
+    (4.5,2.4)
+    }
+    -- cycle;
+
+    \node[font=\small] at (4,-0.8)
+    {\textbf{Sum of Squared Differences (SSD)}};
+\end{tikzpicture}

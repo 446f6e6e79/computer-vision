@@ -2,7 +2,7 @@
 While motion detection identifies the presence of movement, \textbf{motion tracking} aims to 
 follow specific objects across consecutive frames. 
 This process involves establishing temporal correspondence by associating detected entities in the current 
-frame with their instances in subsequent frames.
+frame with their instances in subsequent frames, allowing us to reconstruct the trajectory of each object over time.
 
 Motion tracking is essential across various domains, including:
 \begin{itemize}
@@ -12,88 +12,15 @@ Motion tracking is essential across various domains, including:
 \end{itemize}
 
 The primary objective is often \textbf{object tracking}, which maintains the persistent identity of a target over time. 
-Depending on the application, tracking can be performed in different dimensionalities:
+Depending on the application, tracking can be performed in different dimensionality:
 \begin{itemize}
 \item Tracking 2D coordinates in the image plane (e.g., using bounding boxes or centroids);
 \item Tracking 3D coordinates in real-world space (requires multiple cameras or depth sensors);
 \item Determining the pose or articulation of complex objects, such as human skeletal tracking.
 \end{itemize}
 
-\subsection{2D Tracking Methodologies}
-In scenes with a single moving object, tracking can often be achieved by simply following the object's centroid. 
-However, multi-object scenarios require sophisticated association algorithms to prevent identity switches. 
-Common 2D tracking approaches include:
-\begin{itemize}
-    \item \textbf{Region-based:} Associating areas based on global features like color or texture.
-    \item \textbf{Contour-based:} Following the evolving boundary or "snake" of an object.
-    \item \textbf{Feature-based:} Tracking distinct interest points, such as Harris corners or SIFT features.
-    \item \textbf{Template-based:} Matching a predefined visual patch of the target across frames.
-\end{itemize}
-
-\subsection{Region-Based Tracking}
-Region-based tracking follows image patches with a \textbf{uniform appearance}. 
-This method is computationally efficient and well-suited for real-time systems, providing a robust balance
-between speed and discriminative power.
-
-The standard implementation utilizes a \textbf{color histogram} as a visual signature. 
-The workflow typically involves:
-\begin{enumerate}
-    \item Segmenting the region of interest (ROI) from the background.
-    \item Computing the color distribution (histogram) of the ROI.
-    \item Searching for the most similar histogram in the subsequent frame to locate the object.
-\end{enumerate}
-
-While effective for targets with distinctive colors, this approach is sensitive to illumination changes. 
-To mitigate this, practitioners often employ the \textbf{HSV color space} (which separates luminance from chromaticity) 
-or implement \textbf{dynamic model updates} to adapt the histogram over time.
-
-\subsubsection{Part-Based Models}
-A single global histogram may fail when tracking complex, non-rigid objects like humans. 
-\textbf{Part-based models} decompose the object into several sub-regions (e.g., head, torso, and legs), 
-each with its own local histogram.
-
-This decomposition provides two major advantages:
-\begin{itemize}
-    \item \textbf{Robustness to Occlusion:} If the legs are hidden by an obstacle, 
-    the system can maintain the track using the head and torso signatures.
-    \item \textbf{Spatial Verification:} It prevents confusion between objects with similar colors but different 
-    configurations. Take in consideration the case of two people, one wearing a white shirt and black pants, 
-    and the other wearing a black shirt and white pants. A global histogram might struggle to differentiate them, 
-    but a part-based model can leverage the spatial arrangement of colors to maintain accurate tracking.
-\end{itemize}
-
-\subsubsection{Implementation and Similarity Metrics}
-The tracking process evaluates the similarity between the \textbf{tracked model} ($O^t$) 
-in the current frame and a stored \textbf{reference model} ($O^r$). 
-
-Common metrics for histogram comparison include:
-\begin{itemize}
-    \item \textbf{Histogram Intersection:} Measures the correlation between two distributions.
-    \[ \cap (O^t, O^r) = \sum_{n=1}^{U} \min(O^t_{n}, O^r_{n}) \]
-    This simply returns the area of the intersection of the two histograms, which is a measure of their similarity.
-    \item \textbf{Sum of Squared Differences (SSD):} Measures the Euclidean distance between histogram bins.
-    \[ SSD(O^t, O^r) = \sum_{n=1}^{U} (O^t_{n} - O^r_{n})^2 \]
-    This instead returns the area of the difference between the two histograms, which is a measure of their dissimilarity.
-\end{itemize}
-\begin{comment}
-    #TODO: insert image here of histogram comparison from the lesson
-    1st method takes the minimum value of each corresponding bin and sums them up, giving as a result the area
-    of the intersection of the two histograms. 
-    2nd method takes the difference of each corresponding bin, squares it, and sums them up, giving as a result the area
-    of the difference between the two histograms.
-\end{comment}
-To improve robustness, bins typically represent color ranges rather than individual 
-values to account for sensor noise and minor lighting fluctuations.
-
-\subsubsection{Addressing Environmental Noise: Shadows}
-Shadows represent a significant challenge in region-based tracking because 
-they alter the pixel values of the background, often leading to false positives in motion detection. 
-
-To prevent a shadow from being tracked as a separate entity or distorting the object's histogram, 
-we assume that a shadow primarily reduces \textbf{brightness} while leaving \textbf{chromaticity} (Hue and Saturation) relatively intact. 
-By performing tracking in the HSV space and ignoring the Value ($V$) component, 
-the system can become significantly more shadow-invariant, improving the robustness of the tracking process in outdoor 
-environments or scenes with variable lighting conditions.
+\subsection{Foundations: Detection, Association, and Challenges}
+Before diving into specific tracking methodologies, it is crucial to understand how raw pixel changes are converted into trackable objects, how these objects are linked across frames, and the common challenges that arise during this process.
 
 \subsubsection{Blob Extraction and Post-Processing}
 Following motion detection, the resulting binary masks often contain "noise"—fragmented regions, 
@@ -112,7 +39,7 @@ By filtering out blobs that are too small to be objects of interest, we provide 
 
 \subsubsection{Target Association}
 Once we have the blobs representing the detected objects, we need to associate them across consecutive frames to maintain the identity of each object over time.
-This process is known as \textbf{target association} and is actually common to all tracking methods, not just region-based ones.
+This process is known as \textbf{target association} and is actually common to all tracking methods.
 
 In general, detection is not carried out on a frame-by-frame basis, but rather on a \textbf{temporal window} of frames, since it can
 be demanding in terms of computational resources. 
@@ -169,6 +96,88 @@ of the objects and predicting potential occlusions.
 Usually, the system suspends the tracking of the involved objects during the occlusion, and then re-identifies
 them once they reappear as separate entities in the scene.
 
+\subsection{2D Tracking Methodologies}
+In scenes with a single moving object, tracking can often be achieved by simply following the object's centroid. 
+However, multi-object scenarios require sophisticated association algorithms to prevent identity switches. 
+Common 2D tracking approaches include:
+\begin{itemize}
+    \item \textbf{Region-based:} Associating areas based on global features like color or texture.
+    \item \textbf{Contour-based:} Tracking the object's based on the shape of its boundary.
+    \item \textbf{Feature-based:} Tracking distinct interest points, such as Harris corners or SIFT features.
+    \item \textbf{Template-based:} Matching a predefined visual patch of the target across frames.
+\end{itemize}
+
+\subsection{Region-Based Tracking}
+Region-based tracking follows image patches with a \textbf{uniform appearance}. 
+This method is computationally efficient and well-suited for real-time systems, providing a robust balance
+between speed and discriminative power.
+
+The standard implementation utilizes a \textbf{color histogram} as a visual signature. 
+The workflow typically involves:
+\begin{enumerate}
+    \item Segmenting the region of interest (ROI) from the background.
+    \item Computing the color distribution (histogram) of the ROI.
+    \item Searching for the most similar histogram in the subsequent frame to locate the object.
+\end{enumerate}
+
+While effective for targets with distinctive colors (each object needs to have a unique color distribution), this approach is sensitive to illumination changes. 
+To mitigate this, practitioners often employ the \textbf{HSV color space} (which separates luminance from chromaticity) 
+or implement \textbf{dynamic model updates} to adapt the histogram over time.
+
+\subsubsection{Part-Based Models}
+A single global histogram may fail when tracking complex, non-rigid objects like humans. 
+\textbf{Part-based models} decompose the object into several sub-regions (e.g., head, torso, and legs), 
+each with its own local histogram.
+
+This decomposition provides two major advantages:
+\begin{itemize}
+    \item \textbf{Robustness to Occlusion:} If the legs are hidden by an obstacle, 
+    the system can maintain the track using the head and torso signatures.
+    \item \textbf{Spatial Verification:} It prevents confusion between objects with similar colors but different 
+    configurations. Take in consideration the case of two people, one wearing a white shirt and black pants, 
+    and the other wearing a black shirt and white pants. A global histogram might struggle to differentiate them, 
+    but a part-based model can leverage the spatial arrangement of colors to maintain accurate tracking.
+\end{itemize}
+
+\subsubsection{Implementation and Similarity Metrics}
+The tracking process evaluates the similarity between the \textbf{tracked model} ($O^t$) 
+in the current frame and a stored \textbf{reference model} ($O^r$), which is updated over time to adapt to changes in the object's appearance.
+
+Common metrics for histogram comparison include:
+\begin{itemize}
+    \item \textbf{Histogram Intersection:} Measures the correlation between two distributions.
+    $$\cap (O^t, O^r) = \sum_{n=1}^{U} \min(O^t_{n}, O^r_{n})$$
+    This simply returns the area of the intersection of the two histograms, which is a measure of their similarity.
+    \item \textbf{Sum of Squared Differences (SSD):} Measures the Euclidean distance between histogram bins.
+    $$SSD(O^t, O^r) = \sum_{n=1}^{U} (O^t_{n} - O^r_{n})^2$$
+    This instead returns the area of the difference between the two histograms, which is a measure of their dissimilarity.
+\end{itemize}
+
+\begin{center}
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \resizebox{\linewidth}{!}{\input{Tikz/tracking/similarity-intersection.tex}}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \resizebox{\linewidth}{!}{\input{Tikz/tracking/similarity-ssd.tex}}
+    \end{minipage}
+\end{center}
+
+To improve robustness, bins typically represent color ranges rather than individual 
+values to account for sensor noise and minor lighting fluctuations.
+
+\subsubsection{Addressing Environmental Noise: Shadows}
+Shadows represent a significant challenge in region-based tracking because 
+they alter the pixel values of the background, often leading to false positives in motion detection. 
+
+To prevent a shadow from being tracked as a separate entity or distorting the object's histogram, 
+we assume that a shadow primarily reduces \textbf{brightness} while leaving \textbf{chromaticity} (Hue and Saturation) relatively intact. 
+By performing tracking in the HSV space and ignoring the Value ($V$) component, 
+the system can become significantly more shadow-invariant, improving the robustness of the tracking process in outdoor 
+environments or scenes with variable lighting conditions.
+
 \subsection{Feature Based Tracking}
 The idea behind feature-based tracking is to replace the information carried by the histogram of the whole object 
 with a set of distinctive local \textbf{features}, extracted from the object itself.
@@ -178,7 +187,7 @@ Considering a set of images $A = \{I_1, I_2, ..., I_n\}$, we can extract a set o
 The position of each feature in a given image can be represented as a vector of coordinates $f_i(x_i, y_i)$.
 The objective of feature-based tracking is to determine the displacement vector $d_i = (dx_i, dy_i)$ that best estimates the movement of
 feature $f_i$ from one frame to the next, such that:
-\[ f_{i+1}(x_i + dx_i, y_i + dy_i) \]
+$$f_{i+1}(x_i + dx_i, y_i + dy_i)$$
 
 \subsubsection{Good Features to Track}
 Not all features are equally suitable for tracking. 
@@ -186,10 +195,10 @@ The \textbf{Good Features to Track} algorithm identifies features that are likel
 This method is based on the concept of \textbf{corner detection}, which identifies points in the image where the intensity changes significantly in multiple directions.
 
 For each pixel in the image $p(x, y)$ we compute the \textbf{structure tensor} $Z$:
-\[ Z = \begin{bmatrix}
+$$Z = \begin{bmatrix}
     \sum_{W} J_x^2 & \sum_{W} J_x J_y \\
     \sum_{W} J_x J_y & \sum_{W} J_y^2
-\end{bmatrix} \]
+\end{bmatrix}$$
 where $J_x$ and $J_y$ are the gradients of the image in the x and y directions, respectively, 
 and the summation is performed over a window $W$ centered around the pixel $p$.
 
@@ -200,14 +209,14 @@ indicating that changes are in multiple directions, which is characteristic of c
 \subsubsection{Tracking Features}
 Once we have identified the good features to track, we need to track their movement across frames.
 Ideally, we would expect that the position of a feature in the next frame can be predicted by adding a displacement vector to its current position:
-\[ I_i(Df - d) = I_{i+1}(f) \]
+$$I_i(Df - d) = I_{i+1}(f)$$
 where $I_i, I_{i+1}$ are successive frames, $f$ is the position of the feature in the current frame, $D$ is the deformation matrix 
 and $d$ is the displacement vector we want to estimate.
 
 However, due to the noise, the equality does not hold perfectly. Assuming that the motion between frames is small, 
 we can use a translational model to approximate the movement of the feature, which simplifies the problem to 
 finding the displacement vector $d$ that minimizes the difference between the two images:
-\[ \epsilon = \int \int_{W} [I_i(f - d) -  I_{i+1}(f)]^2 \omega(f) \; df \]
+$$\epsilon = \int \int_{W} [I_i(f - d) -  I_{i+1}(f)]^2 \omega(f) \; df$$
 The value of $d$ that minimizes this error can be found by simply taking the derivative of $\epsilon$ with respect to $d$ and setting it to zero.
 
 \subsection{Lucas-Kanade Optical Flow}
@@ -215,9 +224,9 @@ The Lucas-Kanade method is an improvement over the basic feature tracking approa
 It uses a two-frame differential method to estimate the optical flow, which is the apparent motion of brightness patterns in the image.
 
 Consider $u = (u_x, u_y)$ in frame $I_i$ and $v = (v_x, v_y)$ in frame $I_{i+1}$. The goal is to find the displacement vector $d$ such that:
-\[ v = u + d \]
+$$v = u + d$$
 Where d is the vector that minimizes:
-\[ \epsilon(d) = \epsilon(d_x, d_y) = \sum_{x = u_x - \gamma_x}^{u_x + \gamma_x} \sum_{y = u_y - \gamma_y}^{u_y + \gamma_y} [I_i(x, y) - I_{i+1}(x + d_x, y + d_y)]^2 \]
+$$\epsilon(d) = \epsilon(d_x, d_y) = \sum_{x = u_x - \gamma_x}^{u_x + \gamma_x} \sum_{y = u_y - \gamma_y}^{u_y + \gamma_y} [I_i(x, y) - I_{i+1}(x + d_x, y + d_y)]^2$$
 Where $\gamma$ is the size of the window around the feature point that we are considering for tracking.
 
 The strong point of the Lucas-Kanade method comes from its pyramidal implementation, which allows it to handle larger displacements by creating a multiscale representation of the image.
@@ -250,11 +259,11 @@ We have that:
 \end{itemize}
 The $L$-th level of the pyramid is defined as a linear combination of the elements of the previous level, with more weight given to the central pixels
 and less weight given to the peripheral pixels.
-\[ I^L(x, y) = \frac{1}{4} I^{L-1}(2x, 2y) + \frac{1}{8} I^{L-1}(2x + 1, 2y) + \frac{1}{8} I^{L-1}(2x, 2y + 1) + \frac{1}{16} I^{L-1}(2x + 1, 2y + 1) \]
+$$I^L(x, y) = \frac{1}{4} I^{L-1}(2x, 2y) + \frac{1}{8} I^{L-1}(2x + 1, 2y) + \frac{1}{8} I^{L-1}(2x, 2y + 1) + \frac{1}{16} I^{L-1}(2x + 1, 2y + 1)$$
 
 At each level of the pyramid, the Lucas-Kanade method is applied to estimate the displacement vector $d$ for the features.
 The estimated displacement is then refined by propagating it down the pyramid:
-\[ d^{L-1} = 2(d^L + \delta^{L}) \] 
+$$d^{L-1} = 2(d^L + \delta^{L})$$ 
 Where:
 \begin{itemize}
     \item $d^L$ is the displacement estimated at level $L$. It is multiplied by 2 to account for the fact that the resolution at level $L$ is half of the resolution at level $L-1$, 
@@ -271,7 +280,7 @@ It tries to estimate the state of the system over discrete time steps, given a s
 The state of the system at time $t$ is represented by a random variable $X_t$, which includes information about the position, velocity, 
 and acceleration along each axis of the tracked object.
 It can be represented as a function of the previous state and a process noise term:
-\[ X_t = f_t(X_{t-1}, w_{t-1}) \]
+$$X_t = f_t(X_{t-1}, w_{t-1})$$
 Where:
 \begin{itemize}
     \item $f_t$ is the non-linear state transition function that models how the state evolves over time;
@@ -286,7 +295,7 @@ that the person's movement might not be perfectly predictable, and that there mi
 \label{bayesian-tracking:observation}
 The observations at time $t$ are represented by another random variable $Z_t$, which includes the measurements obtained from the sensors.
 It can be represented as a function of the current state and an observation noise term:
-\[ Z_t = h_t(X_t, v_t) \]
+$$Z_t = h_t(X_t, v_t)$$
 Where:
 \begin{itemize}
     \item $h_t$ is the non-linear observation function that models how the state is transformed into observations;
@@ -314,24 +323,24 @@ The estimation cycle consists of two main steps:
 
 \paragraph{Prediction Step}
 Using the state transition function from \ref{bayesian-tracking:state}, the evolution of the system can be described by the conditional probability distribution:
-\[ p(X_t | X_{t-1}) \]
+$$p(X_t | X_{t-1})$$
 which models the likelihood of transitioning from state $X_{t-1}$ to state $X_t$.
 
 Using the observation function from \ref{bayesian-tracking:observation}, the likelihood of observing the measurement $Z_t$, 
 given the current state $X_t$ can be expressed as:
-\[ p(Z_t | X_t) \]
+$$p(Z_t | X_t)$$
 
 To predict the state at time $t$, the algorithm propagates the posterior probability, obtained from the previous time step 
 $p(X_{t-1} | Z_{1:t-1})$ forward.
 This results in the \textbf{prior distribution} for the current time step, which is computed by marginalizing 
 over all possible previous states:
-\[ p(X_t | Z_{t-1}) = \int p(X_t | X_{t-1}) p(X_{t-1} | Z_{t-1}) dX_{t-1} \]
+$$p(X_t | Z_{t-1}) = \int p(X_t | X_{t-1}) p(X_{t-1} | Z_{t-1}) dX_{t-1}$$
 
 \paragraph{Update Step}
 When the new observation $Z_t$ becomes available, the likelihood $p(Z_t | X_t)$ is derived from the observation model in \ref{bayesian-tracking:observation}.
 
 The prediction is then updated using Bayes' rule to obtain the new posterior:
-\[ p(X_t | Z_{t}) = \frac{p(Z_t | X_t) p(X_t | Z_{t-1})} {p(Z_t | Z_{t-1})} \]
+$$p(X_t | Z_{t}) = \frac{p(Z_t | X_t) p(X_t | Z_{t-1})} {p(Z_t | Z_{t-1})}$$
 where the denominator $p(Z_t | Z_{t-1})$ acts as a normalizing constant.
 
 \subsection{Kalman Filter}
@@ -347,24 +356,24 @@ which allows for a closed-form solution to the estimation problem.
 
 The algorithm starts from a first measurement $Z_0$, with its associated noise variance $\sigma_{z_0}^2$.
 It assumes that the first prediction is equal to the first measurement, and that the first prediction error is equal to the noise variance of the first measurement:
-\[ \hat{X}_0 = Z_0 \]
-\[ \sigma_0 = \sigma_{z_0}^2 \]
+$$\hat{X}_0 = Z_0$$
+$$\sigma_0 = \sigma_{z_0}^2$$
 
 The Kalman Filter then iteratively performs the prediction and update steps as new measurements become available,
 propagating the state estimate and its associated uncertainty over time.
 Given a new measurement $Z_t \; \sigma_{z_t}^2$ at time $t$, the Kalman Filter performs the following steps:
 \begin{enumerate}
     \item \textbf{Prediction:} we add a displacement to the previous state estimate
-    \[ \hat{X}_t = \hat{X}_{t-1} + K_t (Z_t - \hat{X}_{t-1}) \]
+    $$\hat{X}_t = \hat{X}_{t-1} + K_t (Z_t - \hat{X}_{t-1})$$
     where $K_t$ is the \textbf{Kalman Gain}, which weights the influence of the new measurement 
     relative to the current state estimate. It is computed as:
-    \[ K_t = \frac{\sigma_{z_{t-1}}^2}{\sigma_{z_{t-1}}^2 + \sigma_{z_t}^2} \]
+    $$K_t = \frac{\sigma_{z_{t-1}}^2}{\sigma_{z_{t-1}}^2 + \sigma_{z_t}^2}$$
 
     We can see the prediction as a weighted average between the previous state estimate and the new measurement, 
     where the weights are determined by the relative uncertainties of the two sources of information.
      
     \item \textbf{Update:} we update the error variance of the state estimate:
-    \[ \frac{1}{\sigma_t^2} = \frac{1}{\sigma_{z_{t-1}}^2} + \frac{1}{\sigma_{z_t}^2} \]
+    $$\frac{1}{\sigma_t^2} = \frac{1}{\sigma_{z_{t-1}}^2} + \frac{1}{\sigma_{z_t}^2}$$
 \end{enumerate}
 The Kalman Filter provides a computationally efficient solution to the least-squares estimation problem. In particular,
 we are trying to find the Kalman Gain $K_t$ that minimizes the mean squared error of the state estimate $\hat{X}_t$.
@@ -374,7 +383,7 @@ Now that we have seen the mathematical formulation of the Kalman Filter, let's d
 
 \paragraph{State Model}
 The state model can be represented as a linear function of the previous state and the control input, plus some process noise:
-\[ x_t = A_t x_{t-1} + B_t u_t + w_{t-1} \] 
+$$x_t = A_t x_{t-1} + B_t u_t + w_{t-1}$$ 
 Where:
 \begin{itemize}
     \item $x_t$ is the state vector at time $t$;
@@ -384,11 +393,11 @@ Where:
     \item $w_{t-1}$ is the process noise, assumed to be Gaussian with zero mean and covariance $Q_t$;
 \end{itemize}
 Usually, if we have no control input, we can simply ignore the term $B_t u_t$ in the state model, which simplifies it to:
-\[ x_t = A_t x_{t-1} + w_{t-1} \]
+$$x_t = A_t x_{t-1} + w_{t-1}$$
 
 \paragraph{Observation Model}
 The observation model can be represented as a linear function of the state, plus some observation noise:
-\[ z_t = H_t x_t + v_t \]
+$$z_t = H_t x_t + v_t$$
 Where:
 \begin{itemize}
     \item $z_t$ is the observation vector at time $t$;
@@ -403,8 +412,8 @@ and the error covariance matrix $P_t$:
 \paragraph{1. Prediction}
 Project the state and uncertainty forward, computing the prior state estimate $\hat{x}_t^-$ 
 and its associated error covariance $P_t^-$:
-\[ \hat{x}_t^- = A_t \hat{x}_{t-1} + B_t u_t \]
-\[ P_t^- = A_t P_{t-1} A_t^T + Q_t \]
+$$\hat{x}_t^- = A_t \hat{x}_{t-1} + B_t u_t$$
+$$P_t^- = A_t P_{t-1} A_t^T + Q_t$$
 
 \paragraph{2. Update}
 Once the new observation $z_t$ is available, we compute the Kalman Gain $K_t$, update the state estimate $\hat{x}_t$,
@@ -442,17 +451,17 @@ These particles are selected from a proposal distribution $\pi(x_t | x_{t-1})$,
 which is chosen as an hyperparameter of the algorithm.
 
 The a posteriori distribution of the state given the observations can be approximated as:
-\[ p(x_t | z_{t}) \approx \sum_{i=1}^N w_{t-1}^{(i)} \delta(x_t - x_t^{(i)}) \]
+$$p(x_t | z_{t}) \approx \sum_{i=1}^N w_{t-1}^{(i)} \delta(x_t - x_t^{(i)})$$
 where $\delta(x_t - x_t^{(i)})$ represents the distance between the state $x_t$ and the state of the $i$-th particle $x_t^{(i)}$.
 
 To update the particles and their weights, we perform the following steps:
 \begin{enumerate}
     \item \textbf{Sampling:} For each particle, we sample a new state from the proposal distribution;
     \item \textbf{Weighting:} We update the weight of each particle based on the likelihood of the new state given the observation:
-    \[ w_t^{(i)} = w_{t-1}^{(i)} p(z_t | x_t^{(i) }) \]
+    $$w_t^{(i)} = w_{t-1}^{(i)} p(z_t | x_t^{(i) })$$
     \item \textbf{Normalization:} the weights are normalized to ensure that they sum to 1. This is done by dividing
     each weight by the sum of all weights:
-    \[ w_t^{(i)} = \frac{w_t^{(i)}}{\sum_{j=1}^N w_t^{(j)}} \]
+    $$w_t^{(i)} = \frac{w_t^{(i)}}{\sum_{j=1}^N w_t^{(j)}}$$
     \item \textbf{Resampling:} To prevent the problem of particle degeneracy, where a few particles have significant weights while others have negligible weights, we perform resampling.
     This involves drawing a new set of particles from the current set, with replacement, according to their weights.
     Each new particle is assigned a weight of $\frac{1}{N}$, and the process is repeated for the next time step.
