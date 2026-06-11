@@ -23,12 +23,13 @@ Depending on the application, tracking can be performed in different dimensional
 Before diving into specific tracking methodologies, it is crucial to understand how raw pixel changes are converted into trackable objects, how these objects are linked across frames, and the common challenges that arise during this process.
 
 \subsubsection{Blob Extraction and Post-Processing}
-Following motion detection, the resulting binary masks often contain "noise"—fragmented regions, 
+Following motion detection, the resulting binary masks often contain "noise", in the form of fragmented regions, 
 isolated pixels, or holes within moving objects caused by imperfect segmentation. 
 To transform these raw pixels into actionable data, we perform \textbf{blob extraction} (also known as Connected Component Labeling).
 
-This process aggregates neighboring foreground pixels into coherent, 
-labeled regions called \textbf{blobs}, which represent the physical objects in the scene. 
+This process aggregates neighboring foreground pixels into coherent, labeled regions called \textbf{blobs}, which represent the physical objects in the scene.
+The final goal is that each blob corresponds to a single moving object, providing a high-level representation that can be easily tracked over time.
+
 To ensure these blobs accurately reflect the geometry of the targets, the extraction process typically involves the following refinement steps:
 \begin{itemize}
     \item \textbf{Morphological Filtering:} Applying \textit{erosion} to remove isolated noise (small pixel clusters) and \textit{dilation} to bridge gaps and fill internal holes within an object.
@@ -47,6 +48,7 @@ This means that the tracking algorithm must be able to handle cases where an obj
 
 Correspondence is typically achieved through \textbf{data association algorithms} that match the detected blobs based on their spatial proximity and appearance features.
 Such methods rely on the \textbf{optical flow} assumption, which states that the motion of objects between frames is small enough to allow for reliable matching based on their positions and appearances. 
+
 It's important to keep in mind that cameras and frame rates must be chosen to satisfy this assumption, as large displacements can lead to tracking failures.
 
 Different approaches to target association include:
@@ -68,9 +70,11 @@ When multiple blobs are present in the same frame, we might encounter one of two
     \item \textbf{Multiple objects - single blob:} this happens when two or more objects are merged into a single blob, often due to occlusion or proximity.
 \end{enumerate}
 These 2 situations are different faces of the same problem, which is called \textbf{splitting}. 
-\begin{comment}
-    #TODO: insert image here for example 1 and 2 from slides
-\end{comment}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{../media/tracking/splitting.png}
+    \caption{Example of splitting: a single object is fragmented into multiple blobs.}
+\end{figure}
 Before understanding which of the two cases we are facing, evidence need to be collected over a temporal window of frames.
 This way, we can analyze the behavior of the blobs over time to determine whether they represent a single object or multiple objects.
 
@@ -78,12 +82,14 @@ This way, we can analyze the behavior of the blobs over time to determine whethe
 On the other hand, \textbf{merging} occurs when multiple objects are detected as a single blob, due to proximity or occlusion.
 An example of this is when a person which is entering a scene. Initially, feet and arms might be detected as separate blobs.
 As the person moves further into the scene, these blobs might merge into a single blob representing the whole body.
-\begin{comment}
-    #TODO: insert image here for example of merging from slides
-\end{comment}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{../media/tracking/merging.png}
+    \caption{Example of merging: multiple objects are merged into a single blob.}
+\end{figure}
 
-In both cases, its required to analyze the temporal evolution of the blobs to determine whether they represent a single object or multiple 
-objects, and to adjust the tracking accordingly.
+In both splitting and merging, it is required to analyze the temporal evolution of the blobs to determine whether they represent a single object or multiple 
+objects, and to adjust the tracking accordingly. Usually, matching features such as color, shape, or motion patterns can help to resolve ambiguities in these cases.
 
 \subsubsection{Occlusion}
 Moving object can be partially or fully occluded by each other when they are in close proximity.
@@ -91,10 +97,12 @@ This can lead to tracking failures, as one object disappears from the scene, and
 might have no resemblance to the original objects.
 
 This is something that need to be handled before the occlusion occurs, by analyzing the proximity 
-of the objects and predicting potential occlusions. 
+of the objects and predicting potential occlusions. This way, the system can prepare for the occlusion by maintaining the
+identity of the involved objects and anticipating their reappearance after the occlusion.
 
 Usually, the system suspends the tracking of the involved objects during the occlusion, and then re-identifies
-them once they reappear as separate entities in the scene.
+them once they reappear as separate entities in the scene. No model update should be performed during the occlusion.
+Re-identification is usually done by matching features with the pre-occlusion appearance of the objects.
 
 \subsection{2D Tracking Methodologies}
 In scenes with a single moving object, tracking can often be achieved by simply following the object's centroid. 
@@ -181,10 +189,11 @@ environments or scenes with variable lighting conditions.
 
 \subsection{Feature Based Tracking}
 The idea behind feature-based tracking is to replace the information carried by the histogram of the whole object 
-with a set of distinctive local \textbf{features}, extracted from the object itself.
+with a set of distinctive local \textbf{features}, extracted from the object itself. We should then be able to track these features
+over time, and use their movement to infer the movement of the whole object.
 These features are typically points of interest, such as corners, edges, or blobs, that can be reliably detected and tracked across frames.
 
-Considering a set of images $A = \{I_1, I_2, ..., I_n\}$, we can extract a set of features $F_i$ from each image $I_i$.
+Considering a set of images $I = \{I_1, I_2, ..., I_n\}$, we can extract a set of features $F_i$ from each image $I_i$.
 The position of each feature in a given image can be represented as a vector of coordinates $f_i(x_i, y_i)$.
 The objective of feature-based tracking is to determine the displacement vector $d_i = (dx_i, dy_i)$ that best estimates the movement of
 feature $f_i$ from one frame to the next, such that:
@@ -195,29 +204,38 @@ Not all features are equally suitable for tracking.
 The \textbf{Good Features to Track} algorithm identifies features that are likely to be stable and distinctive across frames, making them ideal candidates for tracking.
 This method is based on the concept of \textbf{corner detection}, which identifies points in the image where the intensity changes significantly in multiple directions.
 
-For each pixel in the image $p(x, y)$ we compute the \textbf{structure tensor} $Z$:
-$$Z = \begin{bmatrix}
+For each pixel in the image $p(x, y)$ we compute the \textbf{structure tensor} $Z_p$:
+$$Z_p = \begin{bmatrix}
     \sum_{W} J_x^2 & \sum_{W} J_x J_y \\
     \sum_{W} J_x J_y & \sum_{W} J_y^2
 \end{bmatrix}$$
 where $J_x$ and $J_y$ are the gradients of the image in the x and y directions, respectively, 
 and the summation is performed over a window $W$ centered around the pixel $p$.
 
-The eigenvalues of the structure tensor, $\lambda_1$ and $\lambda_2$, provide a measure of the local intensity variation around the pixel.
+This is basically the Jacobian Matrix of the image gradients, which captures the local intensity variation around the pixel.
+The eigenvalues of the matrix, $\lambda_1$ and $\lambda_2$, provide a measure of the local intensity variation around the pixel.
+We can identify three cases based on the values of the eigenvalues:
+\begin{itemize}
+    \item \textbf{Flat region:} if both eigenvalues are small, the pixel is in a flat region with little intensity variation, making it unsuitable for tracking;
+    \item \textbf{Edge:} if one eigenvalue is large and the other is small, the pixel is on an edge, which can be tracked but may not be stable due to the lack of variation in one direction (Aperture Problem);
+    \item \textbf{Corner:} if both eigenvalues are large, the pixel is in a corner, which is ideal for tracking because it has significant intensity variation in multiple directions.
+\end{itemize}
 A pixel is considered a good feature to track if the smallest eigenvalue $\lambda_{min} = \min(\lambda_1, \lambda_2)$ is above a certain threshold, 
 indicating that changes are in multiple directions, which is characteristic of corners.
 
-\subsubsection{Tracking Features}
+\subsubsection{How to track features}
 Once we have identified the good features to track, we need to track their movement across frames.
 Ideally, we would expect that the position of a feature in the next frame can be predicted by adding a displacement vector to its current position:
 $$I_i(Df - d) = I_{i+1}(f)$$
 where $I_i, I_{i+1}$ are successive frames, $f$ is the position of the feature in the current frame, $D$ is the deformation matrix 
 and $d$ is the displacement vector we want to estimate.
 
-However, due to the noise, the equality does not hold perfectly. Assuming that the motion between frames is small, 
-we can use a translational model to approximate the movement of the feature, which simplifies the problem to 
-finding the displacement vector $d$ that minimizes the difference between the two images:
+However, due to the noise, the equality cannot hold perfectly. Assuming that the motion between frames is small, 
+we can find an approximation of the movement of the feature, instead of trying to find the exact displacement vector $d$.
+This approach simplifies the problem to finding the displacement vector $d$ that minimizes the difference between the two images:
 $$\epsilon = \int \int_{W} [I_i(f - d) -  I_{i+1}(f)]^2 \omega(f) \; df$$
+where $\omega(f)$ is a weighting function that gives more importance to the pixels closer to the feature point, and less importance to the pixels farther away.
+
 The value of $d$ that minimizes this error can be found by simply taking the derivative of $\epsilon$ with respect to $d$ and setting it to zero.
 
 \subsection{Lucas-Kanade Optical Flow}
@@ -229,11 +247,12 @@ $$v = u + d$$
 Where d is the vector that minimizes:
 $$\epsilon(d) = \epsilon(d_x, d_y) = \sum_{x = u_x - \gamma_x}^{u_x + \gamma_x} \sum_{y = u_y - \gamma_y}^{u_y + \gamma_y} [I_i(x, y) - I_{i+1}(x + d_x, y + d_y)]^2$$
 Where $\gamma$ is the size of the window around the feature point that we are considering for tracking.
+This is simply the sum of squared differences between the pixel intensities in the two frames, within a window centered around the feature point.
 
 The strong point of the Lucas-Kanade method comes from its pyramidal implementation, which allows it to handle larger displacements by creating a multiscale representation of the image.
 
 \subsubsection{Pyramidal implementation}
-The two key components of any feature tracker are \textbf{accuracy} and \textbf{robustness}.
+The two key components that any feature tracker must consider are \textbf{accuracy} and \textbf{robustness}.
 \begin{itemize}
     \item \textbf{Accuracy:} relates to the ability to recreate as perfectly as possible the motion of the feature. 
     Usually, a smaller window size $\gamma$ is preferable to increase accuracy, since it focuses on a smaller area around the feature point.
@@ -260,47 +279,66 @@ We have that:
 \end{itemize}
 The $L$-th level of the pyramid is defined as a linear combination of the elements of the previous level, with more weight given to the central pixels
 and less weight given to the peripheral pixels.
-$$I^L(x, y) = \frac{1}{4} I^{L-1}(2x, 2y) + \frac{1}{8} I^{L-1}(2x + 1, 2y) + \frac{1}{8} I^{L-1}(2x, 2y + 1) + \frac{1}{16} I^{L-1}(2x + 1, 2y + 1)$$
+\[
+\begin{aligned}
+I^L(x, y) =
+& \frac{1}{4} I^{L-1}(2x, 2y) +\\
+& \frac{1}{8} \Big( I^{L-1}(2x - 1, 2y) + I^{L-1}(2x + 1, 2y) + I^{L-1}(2x, 2y - 1) + I^{L-1}(2x, 2y + 1) \Big) + \\
+& \frac{1}{16} \Big( I^{L-1}(2x - 1, 2y - 1) + I^{L-1}(2x + 1, 2y - 1) + I^{L-1}(2x - 1, 2y + 1) + I^{L-1}(2x + 1, 2y + 1)\Big)
+\end{aligned}
+\]
 
-At each level of the pyramid, the Lucas-Kanade method is applied to estimate the displacement vector $d$ for the features.
+At each level of the pyramid, an initial guess $g$ is obtained using the Lucas-Kanade method. 
+The guess is then refined at each level and used to pre-translate the image patches for the next level, which allows for more accurate tracking of larger displacements.
+
 The estimated displacement is then refined by propagating it down the pyramid:
-$$d^{L-1} = 2(d^L + \delta^{L})$$ 
+$$g^{L-1} = 2(g^L + d^{L})$$ 
 Where:
 \begin{itemize}
-    \item $d^L$ is the displacement estimated at level $L$. It is multiplied by 2 to account for the fact that the resolution at level $L$ is half of the resolution at level $L-1$, 
+    \item $g^L$ is the displacement estimated at level $L$. It is multiplied by 2 to account for the fact that the resolution at level $L$ is half of the resolution at level $L-1$, 
     so the displacement needs to be scaled accordingly.
-    \item $\delta^{L}$ is the correction term computed at level $L$ to fine-tune the estimate.
+    \item $d^{L}$ is the correction term computed at level $L$ to fine-tune the estimate.
 \end{itemize}
 
 \subsection{Bayesian Tracking}
+All the approaches seen so far are based on the assumption that the motion of the objects can be predicted by simply applying a deterministic model to the previous state of the system.
+
 Bayesian tracking is a probabilistic approach to motion tracking that models the uncertainty in the tracking process. 
-It tries to estimate the state of the system over discrete time steps, given a sequence of observations.
+It tries to estimate the next position of the object (also known as the state of the system) over discrete time steps, 
+given a sequence of observations.
 
 \paragraph{State}
 \label{bayesian-tracking:state}
 The state of the system at time $t$ is represented by a random variable $X_t$, which includes information about the position, velocity, 
-and acceleration along each axis of the tracked object.
-It can be represented as a function of the previous state and a process noise term:
-$$X_t = f_t(X_{t-1}, w_{t-1})$$
+and acceleration along each axis of the tracked object, creating a 6-dimensional state space.
+
+Its evolution can be modeled as a function of the previous state and a process noise term:
+\begin{equation}
+    X_t = f_t(X_{t-1}, w_{t-1})
+    \label{eq:state-transition}
+\end{equation}
 Where:
 \begin{itemize}
     \item $f_t$ is the non-linear state transition function that models how the state evolves over time;
     \item $w_{t-1}$ is the process noise, representing the uncertainty in the state transition;
     \item $X_{t-1}$ is the state of the system at the previous time step.
 \end{itemize}
-Take as example the case of a person walking in a scene. If no noise is involved, the state transition function $f_t$ would simply 
-predict the next position of the person based on their current velocity and direction of movement. Instead, we need to account for the fact
-that the person's movement might not be perfectly predictable, and that there might be external factors that can affect their trajectory (noise).
+Take as example the case of a person walking in a scene. 
+If no noise is involved, the state transition function $f_t$ would simply predict the next position of the person based on their current velocity and direction of movement. 
+Instead, we need to account for the fact that the person's movement might not be perfectly predictable, and that there might be external factors that can affect their trajectory (process noise).
 
 \paragraph{Observation}
 \label{bayesian-tracking:observation}
 The observations at time $t$ are represented by another random variable $Z_t$, which includes the measurements obtained from the sensors.
 It can be represented as a function of the current state and an observation noise term:
-$$Z_t = h_t(X_t, v_t)$$
+\begin{equation}
+    Z_t = h_t(X_t, v_t)
+    \label{eq:observation}
+\end{equation}
 Where:
 \begin{itemize}
     \item $h_t$ is the non-linear observation function that models how the state is transformed into observations;
-    \item $v_t$ is the observation noise, generated by the sensors and the environment;
+    \item $v_t$ is the observation noise, generated by the sensors and processing algorithms;
     \item $X_t$ is the state of the system at the current time step.
 \end{itemize}
 
@@ -321,13 +359,15 @@ The estimation cycle consists of two main steps:
     \item \textbf{Update:} refine the predicted state using the new observation and the observation model, 
     resulting in the posterior distribution (based on the observation) for the current time step.
 \end{enumerate}
+Thanks to the recursive nature of the algorithm, the posterior distribution at time $t-1$ improves the prediction for time $t$, 
+which in turn improves the posterior distribution at time $t$, and so on.
 
 \paragraph{Prediction Step}
-Using the state transition function from \ref{bayesian-tracking:state}, the evolution of the system can be described by the conditional probability distribution:
+Using the state transition function from \ref{eq:state-transition}, the evolution of the system can be described by the conditional probability distribution:
 $$p(X_t | X_{t-1})$$
 which models the likelihood of transitioning from state $X_{t-1}$ to state $X_t$.
 
-Using the observation function from \ref{bayesian-tracking:observation}, the likelihood of observing the measurement $Z_t$, 
+Using the observation function from \ref{eq:observation}, the likelihood of observing the measurement $Z_t$, 
 given the current state $X_t$ can be expressed as:
 $$p(Z_t | X_t)$$
 
@@ -338,7 +378,7 @@ over all possible previous states:
 $$p(X_t | Z_{t-1}) = \int p(X_t | X_{t-1}) p(X_{t-1} | Z_{t-1}) dX_{t-1}$$
 
 \paragraph{Update Step}
-When the new observation $Z_t$ becomes available, the likelihood $p(Z_t | X_t)$ is derived from the observation model in \ref{bayesian-tracking:observation}.
+When the new observation $Z_t$ becomes available, the likelihood $p(Z_t | X_t)$ is derived from the observation model in \ref{eq:observation}.
 
 The prediction is then updated using Bayes' rule to obtain the new posterior:
 $$p(X_t | Z_{t}) = \frac{p(Z_t | X_t) p(X_t | Z_{t-1})} {p(Z_t | Z_{t-1})}$$
