@@ -389,7 +389,8 @@ The Kalman Filter is a specific implementation of the Bayesian tracking framewor
 
 In line to what we have seen in the bayesian tracking section, the Kalman Filter still consists of:
 \begin{itemize}
-    \item A prediction of the next state (prior distribution);
+    \item A measurement of the state of the system (observation, subject to noise);
+    \item A prediction of the next state (prior distribution, also subject to noise);
     \item An update of the state estimate based on new observations (posterior distribution).
 \end{itemize}
 It heavily relies on the assumption that both the process noise and the observation noise are Gaussian, 
@@ -402,7 +403,7 @@ $$\sigma_0 = \sigma_{z_0}^2$$
 
 The Kalman Filter then iteratively performs the prediction and update steps as new measurements become available,
 propagating the state estimate and its associated uncertainty over time.
-Given a new measurement $Z_t \; \sigma_{z_t}^2$ at time $t$, the Kalman Filter performs the following steps:
+Given a new measurement $Z_t, \; \sigma_{z_t}^2$ at time $t$, the Kalman Filter performs the following steps:
 \begin{enumerate}
     \item \textbf{Prediction:} we add a displacement to the previous state estimate
     $$\hat{X}_t = \hat{X}_{t-1} + K_t (Z_t - \hat{X}_{t-1})$$
@@ -410,7 +411,7 @@ Given a new measurement $Z_t \; \sigma_{z_t}^2$ at time $t$, the Kalman Filter p
     relative to the current state estimate. It is computed as:
     $$K_t = \frac{\sigma_{z_{t-1}}^2}{\sigma_{z_{t-1}}^2 + \sigma_{z_t}^2}$$
 
-    We can see the prediction as a weighted average between the previous state estimate and the new measurement, 
+    We can see the prediction as a weighted average between the previous state estimate $\hat{X}_{t-1}$ and the new measurement $Z_t$, 
     where the weights are determined by the relative uncertainties of the two sources of information.
      
     \item \textbf{Update:} we update the error variance of the state estimate:
@@ -475,8 +476,8 @@ This is done by computing the \textbf{Jacobian matrices} of the state transition
 \subsection{Particle Filter}
 Even though the EKF can handle non-linear systems, it still relies on the assumption of the optical flow and of Gaussian noise, 
 which may not always hold in real-world tracking scenarios.
-
 The \textbf{Particle Filter} is a more general approach that can handle non-linear and non-Gaussian systems.
+
 This is done by representing the set of possible alternative states of the system as a collection of samples, called \textbf{particles}, rather than a single state estimate with an associated covariance.
 Each particle represents a possible state of the system, and is associated with a weight that reflects the
 likelihood of that state given the observations.
@@ -492,13 +493,13 @@ These particles are selected from a proposal distribution $\pi(x_t | x_{t-1})$,
 which is chosen as an hyperparameter of the algorithm.
 
 The a posteriori distribution of the state given the observations can be approximated as:
-$$p(x_t | z_{t}) \approx \sum_{i=1}^N w_{t-1}^{(i)} \delta(x_t - x_t^{(i)})$$
-where $\delta(x_t - x_t^{(i)})$ represents the distance between the state $x_t$ and the state of the $i$-th particle $x_t^{(i)}$.
+$$p(x_t | z_{t}) \approx \sum_{i=1}^N w_{t-1}^{(i)} \delta(x_t - x_{t-1}^{(i)})$$
+where $\delta(x_t - x_{t-1}^{(i)})$ represents the distance between the state $x_t$ and the state of the $i$-th particle $x_{t-1}^{(i)}$.
 
 To update the particles and their weights, we perform the following steps:
 \begin{enumerate}
     \item \textbf{Sampling:} For each particle, we sample a new state from the proposal distribution;
-    \item \textbf{Weighting:} We update the weight of each particle based on the likelihood of the new state given the observation:
+    \item \textbf{Weighting:} We update the weight of each particle based on the likelihood of the observation given the particle's predicted state:
     $$w_t^{(i)} = w_{t-1}^{(i)} p(z_t | x_t^{(i) })$$
     \item \textbf{Normalization:} the weights are normalized to ensure that they sum to 1. This is done by dividing
     each weight by the sum of all weights:
