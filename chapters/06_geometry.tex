@@ -1,502 +1,387 @@
 \section{Camera Geometry}
-We have already seen that the camera is a projection device. The location of the pixel in the image plane has a direct relationship
-with the location of the point in the 3D world. When we approximate the camera with a pinhole model, we might lose some information about the scene,
-such as the depth of the objects.
+The camera is a projection device mapping 3D world points to 2D image pixels. The location of the pixel in the image plane has a direct relationship with the location of the point in the 3D world.
+Approximating the camera with a pinhole model loses depth information. 
 
-The position of the acquisition device plays a crucial role in the way we perceive the world. In this section we will try to give some
-explanation of these phenomena and try to give an explanation of how the camera geometry works.
+Since camera positioning dictates scene perception, this section outlines core camera geometry principles.
 
-\subsection{2D Case}
-Typically, a pixel is represented as a 2D point in the image plane using its coordinates.
-\[ p = \begin{bmatrix} x, y \end{bmatrix}^T = \begin{bmatrix} x \\ y \end{bmatrix} \]
+\subsection{Affine Transformations}
+An affine transformation is a spatial operation represented by multiplying a \textbf{homogeneous point} by a transformation matrix. 
+Key transformations include \textbf{scaling}, \textbf{rotation}, \textbf{translation}, and their \textbf{composition}. 
+These serve as the foundational building blocks for 2D and 3D camera matrices.
 
-Often, we use homogeneous coordinates to represent points in the image plane. This allows us to represent points at infinity and perform projective transformations more easily. In homogeneous coordinates, a point is represented as a three-dimensional vector:
+\subsubsection{Homogeneous Coordinates}
+A 2D pixel is standardly represented as $p = \begin{bmatrix} x, y \end{bmatrix}^T$. 
+Using homogeneous coordinates allows us to easily compute projective transformations and represent points at infinity by appending a scaling factor $s$ (typically $s=1$):
 \[ p = \begin{bmatrix} sx, sy, s \end{bmatrix}^T \]
-where \( s \) is a scaling factor, commonly set to 1.
 
-\begin{comment}
-    TOO Many derivation for that are useless
-\end{comment}
-\subsubsection{Affine Transformation}
-An affine transformation is a spatial transformation, represented as a multiplication of the \textbf{homogeneous point} with some predefined matrix.
-We can define different types of transformations, such as \textbf{scaling}, \textbf{rotation}, \textbf{translation} and a \textbf{composition} of them.
-
-\paragraph{Scaling}
-Scaling is a transformation that changes the size of an object, by multiplying the coordinates of each point by a scaling factor $c$. It is applied to all points in the image either uniformly or non-uniformly.
-The scaling transformation matrix $S_{c_x, c_y}$ is defined as:
-\[ S_{c_x, c_y} = \begin{bmatrix} c_x & 0 \\ 0 & c_y \end{bmatrix} \]
-
-where \( c_x \) and \( c_y \) are the scaling factors for the x and y directions, respectively.
-If the scaling factors are the same, the transformation is uniform.
-
-The new coordinates \( (x', y') \) of the point after scaling can be calculated as:
-\[\begin{bmatrix} x' \\ y' \end{bmatrix} = \begin{bmatrix} c_x & 0 \\ 0 & c_y \end{bmatrix} \begin{bmatrix} x \\ y \end{bmatrix} \]
-
-We can express the new coordinates \( (x', y') \) of the point after scaling as:
-\[ x' = c_x \cdot x \]
-\[ y' = c_y \cdot y \]
-
-\paragraph{Rotation}
-Rotation is a transformation that changes the orientation of an object by rotating it around a specific point, usually the origin.
-
-The rotation transformation matrix $R_{\theta}$ for a rotation by an angle \( \theta \) is defined as:
-\[ R_{\theta} = \begin{bmatrix} \cos \theta & -\sin \theta \\ \sin \theta & \cos \theta \end{bmatrix} \]
-where \( \theta \) is the angle of rotation in radians.
-
-The rotation transformation can be applied to a point \( (x, y) \) in the image plane to obtain the new coordinates \( (x', y') \) after rotation:
-\[\begin{bmatrix} x' \\ y' \end{bmatrix} = \begin{bmatrix} \cos \theta & -\sin \theta \\ \sin \theta & \cos \theta \end{bmatrix} \begin{bmatrix} x \\ y \end{bmatrix} \]
-The new coordinates \( (x', y') \) of the point after rotation can be calculated as:
-\[ x' = x \cdot \cos \theta - y \cdot \sin \theta \]
-\[ y' = x \cdot \sin \theta + y \cdot \cos \theta \]
-
-\paragraph{Translation}
-Translation is a transformation that moves an object from one location to another without changing its shape or orientation,
-It is represented as a \textbf{shift} in the coordinates of the points in the image, equivalent to changing the origin of the coordinate system.
-
-We basically want to move the point \( (x, y) \) to a new location \( (x', y') \) by adding a translation vector \( (x_0, y_0) \):
-\[ x' = x + x_0 \]
-\[ y' = y + y_0 \]
-To do this, we can represent the translation transformation using homogeneous coordinates, which allows us to express it as a matrix multiplication.
-The translation transformation matrix $D_{x_0, y_0}$ can be represented as:
-\[ D_{x_0, y_0} = \begin{bmatrix} 1 & 0 & x_0 \\ 0 & 1 & y_0 \\ 0 & 0 & 1 \end{bmatrix} \]
-
-The new coordinates \( (x', y') \) of the point after translation can be calculated as:
-\[\begin{bmatrix} x' \\ y' \\ 1 \end{bmatrix} = \begin{bmatrix} 1 & 0 & x_0 \\ 0 & 1 & y_0 \\ 0 & 0 & 1 \end{bmatrix} \begin{bmatrix} x \\ y \\ 1 \end{bmatrix} \]
-where \( x_0 \) and \( y_0 \) are the translation distances in the x and y directions, respectively.
-
-\subsubsection{Camera Matrix}
-All the transformations we have seen so far can be combined into a single transformation matrix, called the \textbf{camera matrix}.
-This allows us to represent the relationship between the 3D world and the 2D image plane in a compact form, allowing
-to correctly map points from the 3D world to the 2D image plane.
-
-The camera matrix is typically a combination of 4 parameters: rotation angle, translation vector, and the scaling factor.
-\begin{figure}[H]
-\centering
-\includegraphics[width=0.5\textwidth]{../media/geometry/2D-camera_matrix.png}
-\caption{Camera matrix in the 2D case.}
-\end{figure}
-From the example, we can see how the point $P_1$, from the real world, is projected onto the image plane $X_i, Y_i$ as the point $P_2$.
-This is done by applying a translation from the real world coordinates to the camera coordinates,
-then applying a rotation of angle $\theta$ and finally applying a scaling factor $s$ to get the final coordinates of the point in the image plane.
-
-Given a point \( P_j \) in the real world, we can express the transformation to the image plane as follows:
-\[ P_j = D_{x_0, y_0} R_{\theta} S_{s_x, s_y} P_i \]
-where \( P_i \) is the point in the image plane, \( D_{x_0, y_0} \) is the translation matrix, \( R_{\theta} \) is the rotation matrix, and \( S_{s_x, s_y} \) is the scaling matrix.
-
-\paragraph{Compute the Camera Matrix}
-We can compute the parameters of the camera matrix by using a set of known points, called \textbf{control points} in the real world and their
-corresponding points in the image plane. They need to be clearly identifiable in both the real world and the image plane, to allow us to correctly
-match them and use them to compute the parameters of the camera matrix.
-
-Since we have 4 parameters to estimate, we need at least 4 equations to solve for these parameters. Each control point
-provides us with 2 equations (one for the x-coordinate and one for the y-coordinate), so we need at least 2 control points.
-
-For each control point, we can write the following equations:
-\[ \begin{bmatrix}
-x_w \\ y_w \\
-\end{bmatrix}
-=\begin{bmatrix}
-1 & 0 & x_0 \\
-0 & 1 & y_0 \\
-0 & 0 & 1
-\end{bmatrix}
-\begin{bmatrix}
-c_x & 0 & 0 \\
-0 & c_y & 0 \\
-0 & 0 & 1
-\end{bmatrix}
-\begin{bmatrix}
-\cos \theta & -\sin \theta & 0 \\
-\sin \theta & \cos \theta & 0 \\
-0 & 0 & 1
-\end{bmatrix}
-\begin{bmatrix}
-x_i \\ y_i \\ 1
-\end{bmatrix} \]
-where \( (x_w, y_w) \) are the coordinates of the point in the real world,
-\( (x_i, y_i) \) are the coordinates of the point in the image plane,
-\( (x_0, y_0) \) are the translation parameters,
-\( (c_x, c_y) \) are the scaling parameters,
-and \( \theta \) is the rotation angle.
-
-\subsubsection{General Camera Matrix}
-Given that the three matrices that we are multiplying ($R_{\theta}, S_{s_x, s_y}, D_{x_0, y_0}$) are all of the same size,
-we can combine them into a \textbf{single camera matrix} \( C \):
-\[ C = \begin{bmatrix}
-a_{11} & a_{12} & a_{13} \\
-a_{21} & a_{22} & a_{23} \\
-0 & 0 & 1
-\end{bmatrix} \]
-
-Given the camera matrix \( C \), we can compute the transformation from the real world to the image plane and vice versa.
-For example, given a point \( P_j = \begin{bmatrix} x_j \\ y_j \\ 1 \end{bmatrix} \) in the real world, we can compute its projection on the image plane as follows:
-\[ P_i = C P_j \]
-
-\paragraph{Least Square Approach}
-Again, to obtain the 6 parameters of the camera matrix \( C \), we need at least 3 control points.
-
-\note{A few considerations about the selection of the control points:
-\begin{itemize}
-\item Control points should be clearly identifiable in both the real world and the image plane, to allow us to correctly match them and use them to compute the parameters of the camera matrix;
-\item Control points should be well distributed in the real world and in the image plane, to allow us to correctly estimate the parameters of the camera matrix. In particular, we should try to
-avoid selecting control points that are collinear or too close to each other, as this can lead to numerical instability in the estimation of the parameters.
-\item Even tough 3 control points are sufficient to compute the parameters of the camera matrix, it is generally recommended to use more than 3 control points,
-to allow for a more robust estimation of the parameters.
-\end{itemize}
-}
-
-Our goal is to find the set of parameters that minimizes the \textbf{error} between the projected points and the actual points in the image plane.
-The error can be defined as the sum of the squared distances between the projected points and the actual points in the image plane:
-\[ E = \sum_{j=1}^{N} (\underbrace{a_{11} x_j + a_{12} y_j + a_{13}}_{\text{projected } u_j} - u_j)^2 + (\underbrace{a_{21} x_j + a_{22} y_j + a_{23}}_{\text{projected } v_j} - v_j)^2 \]
-where \( (u_j, v_j) \) are the coordinates of the point in the image plane corresponding to the control point \( P_j = \begin{bmatrix} x_j & y_j & 1 \end{bmatrix} \) in the real world.
-
-The solution to this optimization problem can be found by computing the partial derivatives of the error function with respect to the parameters of the camera matrix,
-setting them to zero, and solving the resulting system of equations.
-
-The resulting equation system is:
-\[ \begin{bmatrix}
-\sum x_j^2 & \sum x_j y_j & \sum x_j & 0 & 0 & 0 \\
-\sum x_j y_j & \sum y_j^2 & \sum y_j & 0 & 0 & 0 \\
-\sum x_j & \sum y_j & N & 0 & 0 & 0 \\
-0 & 0 & 0 & \sum x_j^2 & \sum x_j y_j & \sum x_j \\
-0 & 0 & 0 & \sum x_j y_j & \sum y_j^2 & \sum y_j \\
-0 & 0 & 0 & \sum x_j & \sum y_j & N
-\end{bmatrix}
-\begin{bmatrix}
-a_{11} \\ a_{12} \\ a_{13} \\ a_{21} \\ a_{22} \\ a_{23}
-\end{bmatrix} =
-\begin{bmatrix}
-\sum x_j u_j \\ \sum y_j u_j \\ \sum u_j \\ \sum x_j v_j \\ \sum y_j v_j \\ \sum v_j
-\end{bmatrix} \]
-This system of equations can be solved using standard linear algebra techniques, such as Gaussian elimination or singular value decomposition, to find the parameters of the camera matrix \( C \).
-
-\begin{comment}
-    Most of the things in this section are a duplication of the content in the 2D case.
-    I think it would be useful to merge the two sections, and to keep only the 3D case, since it is more general and it can be easily reduced to the 2D case by setting the z-coordinate to zero.
-\end{comment}
-\subsection{3D Case}
-What we have seen so far is a simplified version of the camera geometry, where we have only considered the 2D case.
-This was only applicable to the case where the camera is looking at a flat surface, which is perfectly parallel to the image plane.
-
-In the real world, we usually have a 3D scene and the camera is looking at it from a certain point of view. In this case, we also need to consider
-the \textbf{calibration} of the camera, which is the process of estimating the \textbf{intrinsic} parameters of the camera, and the \textbf{extrinsic} parameters.
-
-\subsubsection{Calibration}
-As we just said, we need to consider both intrinsic and extrinsic parameters of the camera to correctly model the camera geometry in the 3D case.
-
-\paragraph{Intrinsic} set of parameters that describe the internal characteristics of the camera, and are specific to the sensor itself.
-They include parameters such as the focal length, image distortion, and the size of the pixels.
-
-These parameters are crucial for accurately modeling the 3D geometry of the scene. In fact, since each camera has its own intrinsic parameters,
-they will affect the outcome of the projection of the 3D points onto the image plane.
-
-\paragraph{Extrinsic} set of parameters that describe the position and orientation of the camera in the 3D world.
-They include parameters such as the rotation and translation of the camera with respect to a reference coordinate system.
-
-Calibration is the process of estimating both intrinsic and extrinsic parameters of the camera, that allow us to correctly
-map the 3D points in the world to the 2D points in the image plane.
-
-\subsubsection{3D representation}
-In the 3D case, we can represent a point in the world as a 3D vector:
-\[ P = \begin{bmatrix} X, Y, Z \end{bmatrix}^T \]
-where \( X, Y, Z \) are the coordinates of the point in the 3D space.
-
-We can also represent the point in homogeneous coordinates as:
+Similarly, a standard 3D point $P = \begin{bmatrix} X, Y, Z \end{bmatrix}^T$ is represented in homogeneous coordinates as:
 \[ P = \begin{bmatrix} sX, sY, sZ, s \end{bmatrix}^T \]
-where \( s \) is a scaling factor, commonly set to 1.
 
-In general, each point has 4 coordinates systems:
-\begin{itemize}
-\item \textbf{Model coordinate system}: the coordinate system defined by the 3D model of the scene, with the origin at a specific point in the scene and the axes aligned with the model.
-Usually they are matched with the world coordinate system, but they can be different if we want to use a different reference point or orientation for the model.
-\item \textbf{World coordinate system}: the real-world coordinate system;
-\item \textbf{Camera 1 coordinate system}: the coordinate system defined by one camera;
-\item \textbf{Camera 2 coordinate system}: the coordinate system defined by another camera;
-\end{itemize}
-Since the two cameras can have opposite views of the scene, there is no guarantee that there exists
-a one-to-one mapping for all the points in the scene.
-In fact, some points might be visible in one camera and not in the other, due to occlusions or the limited field of view of the cameras.
-For this kind of points, we cannot find their corresponding points in the 3D space.
+\subsubsection{Scaling}
+Scaling resizes an object by multiplying point coordinates by scaling factors. The transformation is uniform if all factors are equal.
 
-\subsubsection{3D affine transformation}
-Similar to the 2D case, we can also define affine transformations in the 3D case.
-The main difference is that we need to consider the z-coordinate of the points in the 3D space,
-and the transformation matrices will be of size 4x4 instead of 3x3.
+\paragraph{2D Case} The scaled coordinates $(x', y')$ are computed using the scaling matrix $S_{c_x, c_y}$:
+\[ \begin{bmatrix} x' \\ y' \end{bmatrix} = \begin{bmatrix} c_x & 0 \\ 0 & c_y \end{bmatrix} \begin{bmatrix} x \\ y \end{bmatrix} \]
 
-\note{In the following section we will use a slightly different notation from the previous one.
-In particular, we represent as:
-\[^kP_i\]
-the pixel \( P_i \) in the coordinate system of the camera \( k \).}
-\paragraph{Translation}
-The translation transformation, mapping a point \( ^1P_i \) in the coordinate system of camera 1 to a point \( ^2P_i \) in the coordinate system of camera 2, can be represented as:
-
-\[ ^2P_i = T(t_x, t_y, t_z) ^1P_i \]
-where \( T(t_x, t_y, t_z) \) is the translation matrix defined as:
-\[ T(t_x, t_y, t_z) = \begin{bmatrix}
-1 & 0 & 0 & t_x \\
-0 & 1 & 0 & t_y \\
-0 & 0 & 1 & t_z \\
-0 & 0 & 0 & 1
-\end{bmatrix} \]
-where \( (t_x, t_y, t_z) \) are the translation distances in the x, y, and z directions, respectively.
-
-\paragraph{Scaling}
-The scaling transformation, mapping a point \( ^1P_i \) in the coordinate system of camera 1 to a point \( ^2P_i \) in the coordinate system of camera 2, can be represented as:
-\[ ^2P_i = S(s_x, s_y, s_z) ^1P_i \]
-where \( S(s_x, s_y, s_z) \) is the scaling matrix defined as:
-\[ S(s_x, s_y, s_z) = \begin{bmatrix}
+\paragraph{3D Case} Scaling extends to the z-coordinate via a 4x4 transformation matrix:
+\[ ^2P_i = S(s_x, s_y, s_z) ^1P_i, \qquad S(s_x, s_y, s_z) = \begin{bmatrix}
 s_x & 0 & 0 & 0 \\
 0 & s_y & 0 & 0 \\
 0 & 0 & s_z & 0 \\
 0 & 0 & 0 & 1
 \end{bmatrix} \]
-where \( (s_x, s_y, s_z) \) are the scaling factors in the x, y, and z directions, respectively.
 
-\paragraph{Rotation}
-The rotation transformation needs to consider the three angles of rotation around the x, y, and z axes.
+\subsubsection{Rotation}
+Rotation changes an object's orientation around the origin.
 
-The rotation transformation, mapping a point \( ^1P_i \) in the coordinate system of camera 1 to a point \( ^2P_i \) in the coordinate system of camera 2, can be represented as:
+\paragraph{2D Case} Rotation by angle $\theta$ (in radians) uses the matrix $R_{\theta}$:
+\[ \begin{bmatrix} x' \\ y' \end{bmatrix} = \begin{bmatrix} \cos \theta & -\sin \theta \\ \sin \theta & \cos \theta \end{bmatrix} \begin{bmatrix} x \\ y \end{bmatrix} \]
+
+\paragraph{3D Case} Rotations around the x, y, and z axes require specific 4x4 matrices:
 \begin{itemize}
-\item Rotation around the x-axis:
-\[ ^2P_i = R(X, \theta_x) ^1P_i \]
-where \( R(X, \theta_x) \) is the rotation matrix defined as:
+\item \textbf{X-axis} ($\theta_x$):
 \[ R(X, \theta_x) = \begin{bmatrix}
 1 & 0 & 0 & 0 \\
 0 & \cos \theta_x & -\sin \theta_x & 0 \\
 0 & \sin \theta_x & \cos \theta_x & 0 \\
 0 & 0 & 0 & 1
 \end{bmatrix} \]
-where \( \theta_x \) is the angle of rotation around the x-axis in radians.
-\item Rotation around the y-axis:
-\[ ^2P_i = R(Y, \theta_y) ^1P_i \]
-where \( R(Y, \theta_y) \) is the rotation matrix defined as:
+\item \textbf{Y-axis} ($\theta_y$):
 \[ R(Y, \theta_y) = \begin{bmatrix}
 \cos \theta_y & 0 & \sin \theta_y & 0 \\
 0 & 1 & 0 & 0 \\
 -\sin \theta_y & 0 & \cos \theta_y & 0 \\
 0 & 0 & 0 & 1
 \end{bmatrix} \]
-where \( \theta_y \) is the angle of rotation around the y-axis in radians.
-\item Rotation around the z-axis:
-\[ ^2P_i = R(Z, \theta_z) ^1P_i \]
-where \( R(Z, \theta_z) \) is the rotation matrix defined as:
+\item \textbf{Z-axis} ($\theta_z$):
 \[ R(Z, \theta_z) = \begin{bmatrix}
 \cos \theta_z & -\sin \theta_z & 0 & 0 \\
 \sin \theta_z & \cos \theta_z & 0 & 0 \\
 0 & 0 & 1 & 0 \\
 0 & 0 & 0 & 1
 \end{bmatrix} \]
-where \( \theta_z \) is the angle of rotation around the z-axis in radians.
 \end{itemize}
 
+\subsubsection{Translation}
+Translation shifts an object without altering shape or orientation, equivalent to moving the coordinate origin.
+
+\paragraph{2D Case} To shift a point by $(x_0, y_0)$, we use a 3x3 matrix applied to homogeneous coordinates:
+\[ \begin{bmatrix} x' \\ y' \\ 1 \end{bmatrix} = \begin{bmatrix} 1 & 0 & x_0 \\ 0 & 1 & y_0 \\ 0 & 0 & 1 \end{bmatrix} \begin{bmatrix} x \\ y \\ 1 \end{bmatrix} \]
+
+\paragraph{3D Case} A 3D translation by $(t_x, t_y, t_z)$ uses a 4x4 matrix:
+\[ T(t_x, t_y, t_z) = \begin{bmatrix}
+1 & 0 & 0 & t_x \\
+0 & 1 & 0 & t_y \\
+0 & 0 & 1 & t_z \\
+0 & 0 & 0 & 1
+\end{bmatrix} \]
+
+\subsection{2D Camera Matrix}
+These transformations can be combined into a single \textbf{camera matrix}, which compactly maps real-world points to the 2D image plane.
+The 2D camera matrix typically combines rotation, translation, and scaling.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{../media/geometry/2D-camera_matrix.png}
+    \caption{Camera matrix in the 2D case.}
+\end{figure}
+As seen in the figure, a real-world point $P_1$ is projected onto the image plane as $P_2$ by sequentially applying translation, 
+rotation ($\theta$), and scaling ($s$).
+
+In general, given a real-world point $P_w$, its transformation to the image plane $P_i$ is expressed as:
+$$P_i = S_{s_x, s_y} R_{\theta} D_{x_0, y_0} P_w$$
+where $D_{x_0, y_0}$ is the translation matrix, $R_{\theta}$ is the rotation matrix, and $S_{s_x, s_y}$ is the scaling matrix.
+
+\paragraph{Computing the Camera Matrix}
+To map a point from the real world to the image plane, we theoretically multiply the individual scaling, rotation, and translation matrices:
+\[
+    \begin{bmatrix} x_i \\ y_i \\ 1 \end{bmatrix} = 
+    \underbrace{ 
+        \begin{bmatrix} c_x & 0 & 0 \\ 0 & c_y & 0 \\ 0 & 0 & 1 \end{bmatrix} 
+        \begin{bmatrix} \cos \theta & -\sin \theta & 0 \\ \sin \theta & \cos \theta & 0 \\ 0 & 0 & 1 \end{bmatrix} 
+        \begin{bmatrix} 1 & 0 & x_0 \\ 0 & 1 & y_0 \\ 0 & 0 & 1 \end{bmatrix} 
+    }_{\text{Complex non-linear system}}
+    \begin{bmatrix} x_w \\ y_w \\ 1 \end{bmatrix} 
+\]
+
+However, solving directly for these physical parameters ($\theta, c_x, c_y, x_0, y_0$) is mathematically difficult due to the trigonometric functions and multiplied variables. 
+
+To simplify the math, we multiply these three $3 \times 3$ matrices together and abstract the resulting cells into generic coefficients. This creates a \textbf{single, general camera matrix} $C$:
+$$C = \begin{bmatrix} a_{11} & a_{12} & a_{13} \\ a_{21} & a_{22} & a_{23} \\ 0 & 0 & 1 \end{bmatrix}$$
+
+This transforms our complex problem into a simple linear mapping equation:
+$$P_i = C P_w$$
+
+Because this generalized matrix $C$ has 6 unknown parameters ($a_{11}$ through $a_{23}$), we need at least 3 \textbf{control points} to estimate it. Control points are reference points with known coordinates that are clearly identifiable in both the real world and the image plane. Each control point provides 2 equations (one for the x-coordinate, one for the y-coordinate).
+
+\note{Control point selection guidelines:
+    \begin{itemize}
+        \item \textbf{Visibility:} Must be clearly identifiable in both spaces to ensure accurate matching.
+        \item \textbf{Distribution:} Should be widely spread. Avoid collinear or highly clustered points to prevent numerical instability.
+        \item \textbf{Quantity:} While 3 points are mathematically sufficient to find the 6 parameters, using more provides a robust estimation against noise using the Least Squares approach.
+    \end{itemize}
+}
+
+\paragraph{Least Squares Approach}
+When using more control points than the minimum required, the goal is to find the parameters that minimize the squared \textbf{error}
+between the projected points and the actual points in the image plane.
+
+For $N$ points, where a real-world point $(x_j, y_j)$ maps to an actual image point $(u_j, v_j)$, the error $E$ is:
+$$E = \sum_{j=1}^{N} \left( \underbrace{\left(a_{11} x_j + a_{12} y_j + a_{13}\right)}_{\text{projected } u_j} - u_j \right)^2 + \left( \underbrace{\left(a_{21} x_j + a_{22} y_j + a_{23}\right)}_{\text{projected } v_j} - v_j \right)^2$$
+
+This optimization problem is solved by computing the partial derivatives of the error function with respect to the 6 matrix parameters and setting them to zero. This yields the following linear system:
+$$\begin{bmatrix} 
+\sum x_j^2 & \sum x_j y_j & \sum x_j & 0 & 0 & 0 \\ 
+\sum x_j y_j & \sum y_j^2 & \sum y_j & 0 & 0 & 0 \\ 
+\sum x_j & \sum y_j & N & 0 & 0 & 0 \\ 
+0 & 0 & 0 & \sum x_j^2 & \sum x_j y_j & \sum x_j \\ 
+0 & 0 & 0 & \sum x_j y_j & \sum y_j^2 & \sum y_j \\ 
+0 & 0 & 0 & \sum x_j & \sum y_j & N 
+\end{bmatrix} 
+\begin{bmatrix} a_{11} \\ a_{12} \\ a_{13} \\ a_{21} \\ a_{22} \\ a_{23} \end{bmatrix} = 
+\begin{bmatrix} \sum x_j u_j \\ \sum y_j u_j \\ \sum u_j \\ \sum x_j v_j \\ \sum y_j v_j \\ \sum v_j \end{bmatrix}$$
+
+This system can be solved using standard linear algebra techniques, such as Gaussian elimination or Singular Value Decomposition (SVD), to find the optimal parameters for the camera matrix $C$.
+
+\subsection{3D Camera Matrix}
+The 2D camera matrix assumes the camera faces a flat surface perfectly parallel to the image plane. 
+For a real-world 3D scene, we must account for camera \textbf{calibration}, the process of estimating the camera's \textbf{intrinsic} and \textbf{extrinsic} parameters.
+
+\subsubsection{Calibration Parameters}
+\begin{itemize}
+    \item \textbf{Intrinsic:} Internal, sensor-specific characteristics (e.g., focal length, pixel size, image distortion). 
+    These dictate how 3D rays project onto the 2D sensor and are specific to each sensor.
+    \item \textbf{Extrinsic:} The position (translation) and orientation (rotation) of the camera in the 
+    3D world relative to a reference coordinate system.
+\end{itemize}
+
+\paragraph{Coordinate Systems}
+A 3D point can be represented in several frames of reference:
+\begin{itemize}
+    \item \textbf{Model/World Coordinate System:} The real-world origin and axes (often tied to a specific 3D model in the scene).
+    \item \textbf{Camera Coordinate System:} Defined in 3D space with its origin at the camera's optical center and axes aligned with the camera's orientation.
+    \item \textbf{Image Coordinate System:} The 2D pixel grid of the camera sensor, where the origin is typically at the top-left corner.
+\end{itemize}
+
+\note{Notation: We denote a pixel $P_i$ in the coordinate system of camera $k$ as $^kP_i$.}
+
 \subsubsection{General Transformation Matrix}
-Similar to the 2D case, we can also define a general camera matrix in the 3D case, which combines all the transformations we have seen so far into a single matrix.
-The general camera matrix \( C \) can be represented as:
-\[ C = \begin{bmatrix}
+We can combine 3D rotations and translations into a single $4 \times 4$ General Transformation Matrix $C$. This maps points between different 3D camera coordinate systems (e.g., from Camera 1 to Camera 2: $^2P_i = C ^1P_i$):
+$$ C = \begin{bmatrix}
 r_{11} & r_{12} & r_{13} & t_x \\
 r_{21} & r_{22} & r_{23} & t_y \\
 r_{31} & r_{32} & r_{33} & t_z \\
 0 & 0 & 0 & 1
-\end{bmatrix} \]
-This matrix allows us to represent the transformation from real from camera 1 points \( ^1P_i \) to camera 2 points \( ^2P_i \) as follows:
-\[ ^2P_i = C ^1P_i \]
+\end{bmatrix} $$
 
-\subsubsection{Camera Model}
-The General Transformation Matrix \( C \) is a powerful tool to represent the transformation between different camer coordinate systems,
-but it doesn't allow to map points from the 3D world to the 2D image plane, since it doesn't consider the intrinsic parameters of the camera.
+\subsubsection{The Full Camera Matrix}
+The General Transformation Matrix only handles 3D-to-3D movements. To map a 3D world point $^WP$ to a 2D image pixel $^IP$, we need a complete \textbf{Camera Matrix} ($^I_WC$) that combines both extrinsic and intrinsic parameters:
+$$ ^IP = ^I_WC ^WP $$
 
-To do this, we need to define a camera model that combines both the intrinsic and extrinsic parameters of the camera.
-Given the matrix $^I_WC$, we can map points from the world coordinate system $^WP$ to the image plane $^IP$ as follows:
-\[ ^IP = ^I_WC ^WP \]
-where \( ^I_WC \) is the camera matrix that combines both intrinsic and extrinsic parameters of the camera, and \( ^WP \) is the point in the world coordinate system.
-
-Formally, this transformation can be represented as:
-\[ \begin{bmatrix}
+In homogeneous coordinates, this projection looks like:
+$$ \begin{bmatrix}
 s' P_x \\ s' P_y \\ s'
 \end{bmatrix} =
 ^I_WC \begin{bmatrix}
 ^WP_x \\ ^WP_y \\ ^WP_z \\ 1
-\end{bmatrix} \]
+\end{bmatrix} $$
 
-\subsubsection{Camera Matrix}
-The previously defined camera model is a simplified version of the real camera model, which is based on the pinhole camera model.
-In fact, the points in the real world are considered as continuous, while the points in the image plane are discrete, since they are represented as pixels.
+To build this final matrix, we apply three sequential transformations (mirroring a pinhole camera model):
+\begin{enumerate}
+    \item \textbf{Roto-Translation ($TR$):} Extrinsic mapping from the World coordinate system ($^WP$) to the 3D Camera coordinate system ($^CP$).
+    \item \textbf{Projection ($\Pi$):} Intrinsic mapping from the 3D Camera system to an intermediate 2D image plane ($^FP$), measured in millimeters.
+    \item \textbf{Pixel Scaling ($\mathcal{S}$):} Intrinsic conversion from physical millimeters ($^FP$) to discrete image pixels ($^IP$).
+\end{enumerate}
 
-We need to apply some additional transformations to the camera model, in the following order:
-\begin{itemize}
-\item \textbf{Roto-Translation} $TR$: to account for the rotation and translation of the camera in the 3D world, we apply a roto-translation
-transformation to the camera model, which allows us to correctly map points from the world coordinate system $^WP$ to the camera coordinate system $^CP$.
-\item \textbf{Projection} $\Pi$: to map the 3D points in the camera coordinate system $^CP$ to the 2D points into an intermediate image plane $^FP$, we apply a projection transformation.
-\item \textbf{Pixel Scaling} $\mathcal{S}$: to account for the size of the pixels in the image plane, we apply a scaling transformation to the camera model,
-which allows us to correctly map points from the camera coordinate system $^FP$ (still in mm) to the image plane $^IP$ (in pixels).
-\end{itemize}
-Note that in the slides you can find the complete mathematical formulation of the roto-translation, projection, and pixel scaling transformations. They are not reported here
-since they were covered only for educational purposes, and they are not strictly necessary to understand the camera model.
-This entire process gives us our final \textbf{Camera Matrix}, which allows us to correctly map points from the 3D world to the 2D image plane.
-
-It can be defined as follows:
-\[ ^IP = C ^WP \]
-where \( C \) is the final camera matrix that combines all the transformations we have seen so far, including the roto-translation, projection, and pixel scaling transformations.
-\[ C = \begin{bmatrix}
+Multiplying these steps together yields our final $3 \times 4$ Camera Matrix $C$:
+$$ C = \begin{bmatrix}
 c_{11} & c_{12} & c_{13} & c_{14} \\
 c_{21} & c_{22} & c_{23} & c_{24} \\
 c_{31} & c_{32} & c_{33} & 1 \\
-\end{bmatrix} \]
+\end{bmatrix} $$
 
-Again, as in the 2D case, we can compute the 11 parameters of the camera matrix \( C \) by using a set of at least 6 control points in the real world and their corresponding points in the image plane.
-Usually an object of known geometry, such as a checkerboard pattern, is used as a calibration object to provide the control points for the estimation of the camera matrix parameters.
-
-Once we apply the camera matrix to a 3D point in the world coordinate system, we obtain the corresponding point in the image plane, which is represented as a 2D point in homogeneous coordinates.
-Note that since the camera matrix is computed from a set of control points, it is not guaranteed to be accurate for all the points in the scene, especially for points that are far from the control points or for points that are occluded by other objects in the scene.
-We need to try to minimize the error between the projected points and the actual points in the image plane.
-
-\begin{comment}
-    The professor here made a lot of confusion for me. He started introducing concepts but then introduced others. 
-    Try to restate everything, removing redundancy. For example, he started introducing the fondamental matrix for the general case, but then
-    he got lost with the co-planar cameras, which is a special case of the general case and then went back to the general case.
-    I'm ok with the fact that he introduced the co-planar, but let's make a decision of which one is the main case and which one is the special case, and then stick to it. 
-    I think the general case should be the main case, since it is more general and it can be easily reduced to the co-planar case by setting the z-coordinate to zero.
-\end{comment}
-\subsection{Computing the 3D coordinates of a point}
-Once the camera matrices of the two cameras are known we know how to map points from the 3D world to the 2D image plane.
-Given the two projections of a point in the two image planes, we can compute the 3D position of a generic point $[X, Y, Z]$ in the world coordinate.
-
-As previously introduced, the projection of a point in the world coordinate system to the image plane is subject to error.
-Once we triangulate the 3D position of a point from its projections in the two image planes, we need to remember that the interception of the two rays might not be perfect
-or even might not exist.
-In practice, the point is choosen as the point that minimizes the distance between the two rays.
-
-\subsection{Binocular Stereo}
-The binocular stereo is the simplest two-camera system that allows us to compute the 3D coordinates of a point in the world coordinate system.
-In order to do this, we need to have two cameras that are looking at the same scene from different points of view. Only the points seen
-by both cameras can be reconstructed in 3D.
-
-In order to reconstruct the 3D information, we need to go through two main steps:
+\paragraph{Estimating the Matrix}
+Because this matrix has 11 unknown parameters (12 entries minus the fixed scaling factor of 1), we need at least \textbf{6 control points} in the real world to solve for it. 
 \begin{itemize}
-\item \textbf{Correspondence computing}: match the two projections of the same point in the two image planes;
-\item \textbf{Reconstruction}: compute the 3D coordinates of the point in the world coordinate system, given the two matching projected points.
-If no matching point is found, we cannot compute the 3D coordinates of the point in the world coordinate system.
+    \item Calibration typically uses an object of known geometry (like a checkerboard) to extract these points.
+    \item Since the estimation relies on specific control points, accuracy degrades for scene points that are far away or occluded. 
+    \item As with the 2D case, we use extra control points and apply Least Squares optimization to minimize projection error.
 \end{itemize}
 
-\begin{comment}
-    I think this two sections can be moved to the itemize list above, 
-\end{comment}
-\subsubsection{Correspondence computing}
-The correspondence computing step is the process of matching the two projections of the same point in the two image planes.
-Usually, this can be done by using some feature matching techniques, image coupling techniques.
-We could also use some additional constraints, such as the epipolar constraint, to reduce the search space for the matching points.
-In fact, corresponding points in the two image planes must lie on the same epipolar line, which is the intersection of the image plane with the plane defined by the two camera centers and the point in the world coordinate system.
+\subsection{Binocular Stereo}
+Binocular stereo is the simplest two-camera system for computing 3D world coordinates. 
+It requires two cameras viewing the same scene from different perspectives; o
+nly points visible to both cameras can be reconstructed.
+
+To extract 3D information, the system performs two main steps:
+\begin{itemize}
+    \item \textbf{Correspondence Computing}: Matching the projections of the same 3D point across both image planes. 
+    This uses feature matching and structural constraints—such as the \textbf{epipolar constraint} 
+    (which states that corresponding points must lie on the same epipolar line, defined by the intersection of the image plane and the plane containing the camera centers and the 3D point) to significantly reduce the search space.
+    \item \textbf{Reconstruction}: Triangulating the 3D world coordinates from the matched 2D projections. 
+    This requires calibrated cameras (known intrinsic and extrinsic parameters). 
+\end{itemize}
+
+Due to occlusions and limited fields of view, a one-to-one mapping between the two cameras is never guaranteed. 
+Unmatched points simply cannot be reconstructed in 3D.
 
 \subsubsection{Reconstruction}
-Once the points in the two image planes are matched, we can compute the 3D coordinates of the point in the world coordinate system.
-To do so, it is necessary to calibrate the cameras, to obtain their intrinsic and extrinsic parameters.
+With known camera matrices, the 3D position of a point $[X, Y, Z]$ is computed by 
+intersecting the rays projected from the matched 2D image points. Because projections are subject to noise and error, 
+these two 3D rays rarely intersect perfectly. In practice, the estimated 3D position 
+is chosen as the coordinate that minimizes the distance between the two non-intersecting rays.
 
-\subsubsection{Co-planar cameras}
-A special case of the binocular stereo is the case of co-planar cameras, where the two cameras are placed on the same plane
-and are looking at the same scene from different points of view.
-In this case, the two cameras are parallel to each other and the image planes are also parallel to each other.
-This configuration allows us to simplify the computation of the 3D coordinates of a point as the only difference between the two projections
-is a shift in the x-coordinate. The closer the object is to the cameras, the bigger the shift is.
+\subsubsection{Co-Planar Cameras}
+In a co-planar configuration, the two cameras and their image planes are perfectly parallel. 
+This simplifies 3D coordinate computation because the only difference between the two projections is a horizontal shift along the x-axis. 
+While this makes correspondence computing much easier, phenomena like parallax (where closer objects appear to move faster than distant ones) 
+must be handled carefully when calculating the speed of moving objects.
 
-This configuration simplifies the correspondence computing step, but doesn't allow for example to compute the speed of a moving object,
-due to the parallax error (closer objects appear to move faster than farther objects).
-
-\begin{comment}
-    This is actually the reconstruction step for coplanar cameras, i would actually move it to a reconstruction section 
-\end{comment}
-\paragraph{Stereo Matching Problem}
+\paragraph{Reconstruction for Co-Planar Cameras}
 \begin{figure}[H]
     \centering
     \resizebox{\linewidth}{!}{\input{Tikz/geometry/coplanar-cameras.tex}}
 \end{figure}
-Consider a point ${}^{W}\boldsymbol{P}=({}^{W}P_x,{}^{W}P_y,{}^{W}P_z)$ in the world coordinate system. 
-Let ${}^{L}\boldsymbol{P}$ and ${}^{R}\boldsymbol{P}$ denote the same point expressed in the left and right camera coordinate systems:
+
+Consider a world point ${}^{W}\boldsymbol{P}=({}^{W}P_x, {}^{W}P_y, {}^{W}P_z)$.
+Let ${}^{L}\boldsymbol{P}$ and ${}^{R}\boldsymbol{P}$ denote this point in the left and right camera coordinate systems, and let ${}^{L}\boldsymbol{p}$ and ${}^{R}\boldsymbol{p}$ denote their respective 2D image projections:
 \[
-{}^{L}\boldsymbol{P}=({}^{L}P_x,{}^{L}P_y,{}^{L}P_z), \quad
-{}^{R}\boldsymbol{P}=({}^{R}P_x,{}^{R}P_y,{}^{R}P_z).
+{}^{L}\boldsymbol{P}=({}^{L}P_x, {}^{L}P_y, {}^{L}P_z), \quad
+{}^{R}\boldsymbol{P}=({}^{R}P_x, {}^{R}P_y, {}^{R}P_z)
 \]
-Their image projections in the left and right image planes are denoted by ${}^{L}\boldsymbol{p}$ and ${}^{R}\boldsymbol{p}$, respectively:
 \[
-{}^{L}\boldsymbol{p}=({}^{L}p_x,{}^{L}p_y), \quad
-{}^{R}\boldsymbol{p}=({}^{R}p_x,{}^{R}p_y).
+{}^{L}\boldsymbol{p}=({}^{L}p_x, {}^{L}p_y), \quad
+{}^{R}\boldsymbol{p}=({}^{R}p_x, {}^{R}p_y)
 \]
 
-Using the projection equations, we can express the coordinates of the projections in the image planes as follows:
+Using standard projection equations with focal length $f$:
 \begin{equation}
     \begin{aligned}
-        ^Lp_x &= \frac{f ^L\boldsymbol{P}_x}{^L\boldsymbol{P}_z}, \quad
-        ^Lp_y &= \frac{f ^L\boldsymbol{P}_y}{^L\boldsymbol{P}_z}, \quad
-        ^Rp_x &= \frac{f ^R\boldsymbol{P}_x}{^R\boldsymbol{P}_z}, \quad
-        ^Rp_y &= \frac{f ^R\boldsymbol{P}_y}{^R\boldsymbol{P}_z}
+        {}^{L}p_x &= \frac{f\,{}^{L}P_x}{{}^{L}P_z}, &
+        {}^{L}p_y &= \frac{f\,{}^{L}P_y}{{}^{L}P_z}, &
+        {}^{R}p_x &= \frac{f\,{}^{R}P_x}{{}^{R}P_z}, &
+        {}^{R}p_y &= \frac{f\,{}^{R}P_y}{{}^{R}P_z}
     \end{aligned}
-    \label{eq:projection_coordinates}
+    \label{eq:coplanar_projection_equations}
 \end{equation}
-Since the two cameras are co-planar, we have that \( ^L\boldsymbol{P}_z = ^R\boldsymbol{P}_z  = \boldsymbol{P}_z \).
 
-From the set of equations \ref{eq:projection_coordinates}, we can rewrite them as follows:
-\[ ^L\boldsymbol{P}_x = \frac{^Lp_x ^L\boldsymbol{P}_z}{f} \]
-Since the two cameras are co-planar, the x-coordinates of the point in the two camera coordinate systems are related by a shift \( b \).
-We can rewrite $^L\boldsymbol{P}_x$ in terms of $^R\boldsymbol{P}_x$ as follows:
-\[ ^L\boldsymbol{P}_x = ^R\boldsymbol{P}_x + b \]
-Substituting this back into equation \ref{eq:projection_coordinates}, we can express the x-coordinate of the projection in the right image plane in terms of the x-coordinate of the projection in the left image plane and the shift \( b \):
+Because the cameras are co-planar, their depth axes are identical:
+\begin{equation}
+    {}^{L}P_z = {}^{R}P_z = P_z.
+    \label{eq:coplanar_equal_depth}
+\end{equation}
+
+Using equations \ref{eq:coplanar_projection_equations} and \ref{eq:coplanar_equal_depth}, we can isolate the x-coordinate in the left camera frame:
+\begin{equation}
+    {}^{L}P_x = \frac{{}^{L}p_x P_z}{f}.
+    \label{eq:left_x_from_projection}
+\end{equation}
+
+The horizontal translation between the two co-planar cameras is defined as the \textbf{baseline} ($b$). 
+Therefore, the x-coordinates in the two camera frames are shifted by this baseline:
+\begin{equation}
+    {}^{L}P_x = {}^{R}P_x + b.
+    \label{eq:coplanar_baseline_shift}
+\end{equation}
+
+Substituting equations \ref{eq:left_x_from_projection} and \ref{eq:coplanar_baseline_shift} into the right camera's projection equation from \ref{eq:coplanar_projection_equations} yields:
 \begin{equation}
     \begin{aligned}
-        ^Rp_x &= \frac{f (^L\boldsymbol{P}_x - b)}{\boldsymbol{P}_z} \\
-        &= \frac{f ^Lp_x \boldsymbol{P}_z}{f} - \frac{f b}{\boldsymbol{P}_z} \\
-        ^Lp_x - ^Rp_x &= \frac{f b}{\boldsymbol{P}_z}
+        {}^{R}p_x
+            &= \frac{f({}^{L}P_x - b)}{P_z} \\
+            &= \frac{f\left(\frac{{}^{L}p_x P_z}{f}\right)}{P_z} - \frac{f b}{P_z} \\
+            &= {}^{L}p_x - \frac{f b}{P_z}.
     \end{aligned}
+    \label{eq:right_projection_substitution}
 \end{equation}
-From which we can derive the z-coordinate of the point in the world coordinate system as follows:
+
+Rearranging equation \ref{eq:right_projection_substitution} gives us the difference between the x-coordinates on the two image planes:
 \begin{equation}
-    \boldsymbol{P}_z = \frac{f b}{^Lp_x - ^Rp_x}
+    {}^{L}p_x - {}^{R}p_x = \frac{f b}{P_z}.
+    \label{eq:coplanar_disparity}
 \end{equation}
-where \( f \) is the focal length of the cameras, \( b \) is defined as the \textbf{baseline} of the stereo system (the distance between the two cameras), 
-and \( ^Lp_x - ^Rp_x \) is defined as the \textbf{disparity} of the point in the two image planes.
 
+Finally, solving equation \ref{eq:coplanar_disparity} for the depth gives us our simplified reconstruction formula:
+\begin{equation}
+    P_z = \frac{f b}{{}^{L}p_x - {}^{R}p_x}.
+    \label{eq:coplanar_depth_from_disparity}
+\end{equation}
 
+Where:
+\begin{itemize}
+    \item $f$ is the focal length.
+    \item $b$ is the \textbf{baseline} (physical distance between the cameras).
+    \item $({}^{L}p_x - {}^{R}p_x)$ is the \textbf{disparity} (the pixel shift of the point between the left and right images).
+\end{itemize}
 
 \subsubsection{General Stereo Vision}
-A more general case of the binocular stereo is the case of stereo vision, where the two cameras are not co-planar and are looking at the same scene from different points of view.
-In this case, given the projections of a point in the two image planes, we can compute the 3D coordinates of the point in the world coordinate system by triangulating the two rays that pass through the projections of the point in the two image planes and the camera centers.
-This approach is based on the epipolar geometry. The epiplar plane is the plane defined by the two camera centers and the point in the world coordinate system. 
-In general, the epipolar planes are a set of planes that share the line passing through the two camera centers.
-The intersection of the epipolar plane with the image planes defines the epipolar lines, which are the lines along which the projections of the point in the two image planes must lie.
+In general stereo vision, cameras are not co-planar. The 3D coordinates of a world point are computed by triangulating the two non-parallel rays that connect the camera centers to the point's 2D image projections.
 
-This approach simplifies the correspondence computing step, as we can restrict the search for the matching points to the epipolar lines. 
+\paragraph{Epipolar Geometry}
+To simplify correspondence computing (finding the matching points between the two images), we rely on \textbf{epipolar geometry}:
+\begin{itemize}
+    \item \textbf{Epipolar Plane:} The plane defined by the two 3D camera centers and the 3D world point. All epipolar planes for a given stereo system intersect along the baseline (the line connecting the two camera centers).
+    \item \textbf{Epipolar Lines:} The intersection of an epipolar plane with the two 2D image planes. If a point is located in Camera 1, its match in Camera 2 \textit{must} lie somewhere along the corresponding epipolar line, drastically reducing the matching search space to 1D.
+\end{itemize}
 
-\begin{comment}
-    This part had a lot of things in common with the previous one, which is the correct one.
-    I would try to expand on this, fixing the symbols to match the one used in the coplanar cameras section
-\end{comment}
-In this case, we don't work anymore with left and right cameras, but we work with two generic cameras, which we will call camera 1 and camera 2.
-Given a point \( ^W\boldsymbol{P} \) in the world coordinate system, we can express its coordinates in the coordinate systems of the two cameras as follows:
-\[ ^1\boldsymbol{P} = ^1 R ^W\boldsymbol{P} + ^1 T \]
-\[ ^2\boldsymbol{P} = ^2 R ^W\boldsymbol{P} + ^2 T \]
+\paragraph{Relative Coordinate Transformation}
+Instead of assuming parallel "Left" and "Right" cameras, we define two generic cameras. Let $^1\boldsymbol{P}$ and $^2\boldsymbol{P}$ be the 3D coordinates of the same world point expressed in the local coordinate systems of Camera 1 and Camera 2, respectively. 
 
-From the first equation, we can express \( ^W\boldsymbol{P} \) in terms of \( ^1\boldsymbol{P} \):
-\[ ^W\boldsymbol{P} = (^1 R)^{-1} (^1\boldsymbol{P} - ^1 T) \]
-Substituting this expression into the second equation, we obtain:
-\[ ^2\boldsymbol{P} = ^2 R (^1 R)^{-1} (^1\boldsymbol{P} - ^1 T) + ^2 T \]
-We can rewrite this equation as:
+We can map the 3D point directly from Camera 1's coordinate system to Camera 2's using a single relative rotation ($R$) and translation ($T$):
 \begin{equation}
-    \label{eq:projection}
-    ^2\boldsymbol{P} = M ^1\boldsymbol{P} + b
+    ^2\boldsymbol{P} = R \: ^1\boldsymbol{P} + T
+    \label{eq:relative_transformation}
 \end{equation}
-This shows that the projection of a point from the left image plane to the right image plane is again a rototranslation followed by a projection.
-where \( f \) is the focal length of the cameras, and \( ^1\boldsymbol{P}_z \) and \( ^2\boldsymbol{P}_z \) are the z-coordinates of the point in the camera coordinate systems.
 
-We can expand the equation \ref{eq:projection} to all its components:
-\begin{equation}
-    \begin{bmatrix}
-        ^1\boldsymbol{P}_x \\ ^1\boldsymbol{P}_y \\ ^1\boldsymbol{P}_z
-    \end{bmatrix}    
-    = M \begin{bmatrix}
-        ^2\boldsymbol{P}_x \\ ^2\boldsymbol{P}_y \\ ^2\boldsymbol{P}_z
-    \end{bmatrix} + b
-\end{equation}
-From the equation \ref{eq:projection_coordinates}, we can derive the relationship between the projections of a point in the two image planes.
-\[ ^2p_x = \frac{f ^2\boldsymbol{P}_x}{^2\boldsymbol{P}_z} \]
-\[ ^2 \boldsymbol{P}_x = \frac{^2p_x ^2\boldsymbol{P}_z}{f} \]
+\paragraph{The Essential Matrix ($E$)}
+If we assume perfectly calibrated cameras (ignoring pixel scaling and focal length for a moment), we work with \textit{normalized} image coordinates, $^1\boldsymbol{x}$ and $^2\boldsymbol{x}$. The coplanarity of the camera centers and the 3D point leads to the \textbf{Essential Matrix} ($E$), which encapsulates the relative extrinsic parameters ($R$ and $T$).
+
+It is defined algebraically as $E = [T]_\times R$, where $[T]_\times$ is the skew-symmetric matrix of the translation vector. The epipolar constraint in normalized coordinates is expressed as:
+$$^2\boldsymbol{x}^T E \: ^1\boldsymbol{x} = 0$$
+This equation states that the ray in Camera 2, the baseline, and the ray in Camera 1 are all coplanar.
+
+\paragraph{The Fundamental Matrix ($F$)}
+In practice, we don't observe normalized coordinates; we observe 2D pixel coordinates, $^1\boldsymbol{p}$ and $^2\boldsymbol{p}$. We know that camera intrinsic parameters (focal length, optical center, pixel size) are modeled by a matrix $K$ that maps 3D points to 2D image pixels:
+$$\boldsymbol{p} = K \boldsymbol{x} \implies \boldsymbol{x} = K^{-1} \boldsymbol{p}$$
+
+By substituting this intrinsic mapping into our Essential Matrix constraint, we get:
+$$(^2\boldsymbol{p}^T K_2^{-T}) E (K_1^{-1} \: ^1\boldsymbol{p}) = 0$$
+$$^2\boldsymbol{p}^T (K_2^{-T} E K_1^{-1}) \: ^1\boldsymbol{p} = 0$$
+
+The term in the middle is defined as the \textbf{Fundamental Matrix} ($F$):
+$$F = K_2^{-T} E K_1^{-1}$$
+Thus, the final epipolar constraint linking raw pixel coordinates between the two cameras is:
+$$^2\boldsymbol{p}^T F \: ^1\boldsymbol{p} = 0$$
+
+\paragraph{Mapping Points to Epipolar Lines}
+The Fundamental Matrix maps a point in one image to its corresponding epipolar line in the other image without ever reconstructing the 3D world coordinates. 
+For a point $^1\boldsymbol{p}$ in the first image, its corresponding epipolar line $l_2$ in the second image is defined by:
+$$l_2 = F \: ^1\boldsymbol{p}$$
+Because $^2\boldsymbol{p}^T l_2 = 0$, the corresponding point $^2\boldsymbol{p}$ \textit{must} lie on this line. 
+Similarly, $F^T$ maps points from Image 2 to epipolar lines in Image 1. As long as the two cameras remain physically fixed relative to one another, the Fundamental Matrix remains unchanged.
+
+\paragraph{Fundamental Matrix vs Camera Matrix} 
+It is crucial to distinguish the Fundamental Matrix ($F$) from the standard Camera Projection Matrix ($P$):
+\begin{itemize}
+    \item \textbf{Camera Matrix ($P$):} A $3 \times 4$ matrix that maps a 3D point in the world coordinate system to a 2D pixel coordinate in a \textit{single} image ($\boldsymbol{p} = P \boldsymbol{P}$). 
+    It encapsulates both the intrinsic parameters ($K$) and the absolute extrinsic parameters (global rotation and translation) of a specific camera relative to the world origin.
+    Two camera matrices can be used to compute the Fundamental Matrix.
+    \item \textbf{Fundamental Matrix ($F$):} A $3 \times 3$ matrix that maps a 2D point in one image to a 1D epipolar line in a \textit{second} image ($l_2 = F \: ^1\boldsymbol{p}$). 
+    It relies entirely on the \textit{relative} extrinsic geometry between the two cameras and their respective intrinsics, 
+    requiring absolutely no knowledge of the global 3D world frame or the actual 3D depths.
+\end{itemize}
+
+
+\paragraph{2D Homography}
+In many applications, finding the mapping between the cameras can be limited to the computation of correspondences between points,
+using a common plane in the scene. 
+In this case, the mapping between the two image planes can be expressed as a \textbf{homography} matrix $H$, which defines an invertible
+transformation between the image plane and the ground plane.
+It is defined as:
+\[ \boldsymbol{p}' = H \: \boldsymbol{p} \]
+where $\boldsymbol{p}$ is a point in the ground plane and $\boldsymbol{p}'$ is the corresponding point in the image plane.
+
+In such cases, having a second camera allows to resolve ambiguities in the matching process, and to compute the 3D coordinates of the points in the scene.
 
 \subsubsection{Correspondence Computing}
 To find a matching point in the two image planes, an error function must be defined to measure the similarity between the two projections of a point in the two image planes.
@@ -519,8 +404,7 @@ This is done by first computing the mean and magnitude of the intensity values i
 Then we can normalize the intensity values in the windows as follows:
 \[ I'(i, j) = \frac{I(i, j) - \bar{I}}{||I||} \]
 
-This can be equivalently done by computing the correlation between the two windows. 
+This can be equivalently done by computing the correlation between the two windows.
 The windows are first transformed into vectors, and then the correlation is computed as the dot product between the two vectors:
 \[ \text{correlation} = \frac{1}{w^2} \sum_{u=1}^{w} \sum_{v=1}^{w} I_1'(i, j) I_2'(i, j) \]
 where \( I_1' \) and \( I_2' \) are the normalized intensity values in the two windows.
-

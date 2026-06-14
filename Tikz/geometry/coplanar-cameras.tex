@@ -35,13 +35,13 @@
 % ------------------------------------------------
 % Camera centers
 % ------------------------------------------------
-\node[point, label=below left:{$O_l=0$}] at (Cl) {};
-\node[point, label=below right:{$O_r$}] at (Cr) {};
+\node[point, label=below left:{${}^{W}O_L=0$}] at (Cl) {};
+\node[point, label=below right:{$O_R$}] at (Cr) {};
 
 % ------------------------------------------------
 % World point and projection rays
 % ------------------------------------------------
-\node[point, label=above right:{$^wP\left({}^wP_x,{}^wP_y,{}^wP_z\right)$}] at (WP) {};
+\node[point, label=above right:{${}^{W}\boldsymbol{P}\left({}^{W}P_x,{}^{W}P_y,{}^{W}P_z\right)$}] at (WP) {};
 \draw[thick] (Cl) -- (WP);
 \draw[thick] (Cr) -- (WP);
 \draw[guide] (WP) -- (RMeasure);
@@ -53,8 +53,8 @@
 % ------------------------------------------------
 \node[projection] at (Pl) {};
 \node[projection] at (Pr) {};
-\node[above left] at (Pl) {${}^Lp_x$};
-\node[below] at (Pr) {${}^Rp_x$};
+\node[above left] at (Pl) {${}^{L}p_x$};
+\node[below] at (Pr) {${}^{R}p_x$};
 
 % ------------------------------------------------
 % Focal distance
@@ -67,9 +67,9 @@
 % Baseline and world x measurements
 % ------------------------------------------------
 \draw[measure] (Cl) ++(0,-0.38) -- node[below] {$b$} ($(Cr)+(0,-0.38)$);
-\draw[measure] (Cl) ++(0,-0.88) -- node[below] {${}^LP_x$} ($(WBase)+(0,-0.88)$);
-\draw[measure] (Cr) ++(0,-1.35) -- node[below] {${}^RP_x$} ($(WBase)+(0,-1.35)$);
+\draw[measure] (Cl) ++(0,-0.88) -- node[below] {${}^{L}P_x$} ($(WBase)+(0,-0.88)$);
+\draw[measure] (Cr) ++(0,-1.35) -- node[below] {${}^{R}P_x$} ($(WBase)+(0,-1.35)$);
 \draw[decorate, decoration={brace, mirror, amplitude=7pt}]
-    ($(Cl)+(0,-1.85)$) -- node[below=9pt] {${}^wP_x$} ($(WBase)+(0,-1.85)$);
+    ($(Cl)+(0,-1.85)$) -- node[below=9pt] {${}^{W}P_x$} ($(WBase)+(0,-1.85)$);
 
 \end{tikzpicture}
