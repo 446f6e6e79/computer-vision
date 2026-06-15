@@ -1,15 +1,124 @@
 \section{Local Feature Extraction}
-In this section we will explore a few methods for extracting local features from images.
-In particular, we have already previously seen the \textbf{Good Features to Track} algorithm, in which we can extract
-a set of corner points from an image, which are then tracked using the \textbf{Lucas-Kanade} method.
-We will be exploring a few other methods for extracting local features, such as the \textbf{Histogram of Oriented Gradients (HOG)} and the \textbf{Scale-Invariant Feature Transform (SIFT)}.
+Beyond previously covered techniques like the \textbf{Good Features to Track} algorithm (tracked via the \textbf{Lucas-Kanade} method), 
+this section introduces other local feature extraction methods, primarily the \textbf{Histogram of Oriented Gradients (HOG)} and \textbf{Scale-Invariant Feature Transform (SIFT)}.
 
 \subsection{Histogram of Oriented Gradients (HOG)}
-\subsubsection{Gradients}
-We have already seen that a gradient is a vector that points in the direction of the greatest change in intensity. In image processing, 
-the gradient is used to detect edges in an image, which are areas of high intensity change. Intensity and direction of edges are one of the
-most important features usefull to carachterize an image.
 
+\subsubsection{Gradients}
+Gradients are vectors pointing toward the greatest change in image intensity, making them crucial for edge detection. 
+Each gradient is characterized by its \textbf{magnitude} (intensity of change) and \textbf{orientation} (direction).
+It is well known that intensity and direction of gradients are one of the most important features for characterizing objects in images.
+
+\subsubsection{Computing HOG}
+\begin{itemize}
+    \item Divide the image into small (rectangular or radial) cells to isolate dominant gradients.
+    \item Compute the gradient magnitude and orientation for each pixel within the cell.
+    \item Build a \textbf{histogram of gradient orientations} for each cell, where each pixel's contribution is weighted by its gradient magnitude.
+    \item Locally normalize the histogram (e.g., via L1 or L2-norm) to account for variations in illumination and contrast.
+\end{itemize}
+
+\subsubsection{Classification using HOG}
+HOG descriptors are commonly fed into classifiers, such as Support Vector Machines (SVMs), for object detection. A standard pipeline involves:
+\begin{enumerate}
+    \item Normalize the input image color and illumination.
+    \item Compute image gradients.
+    \item Build weighted histograms for each cell.
+    \item Normalize the cell histograms.
+    \item Concatenate the normalized histograms across the entire detection window.
+    \item Feed the combined descriptor into a classifier.
+\end{enumerate}
+
+\subsubsection{The Scale Problem}
+HOG is inherently not scale-invariant, which causes issues when detecting objects (like humans) at varying distances from the camera. 
+This is resolved using a \textbf{multi-scale image pyramid}: the image is iteratively downsampled, and HOG features 
+are extracted at each level to detect objects of different sizes.
+
+\subsection{Feature Compression}
+\subsection{Feature Compression}
+Transmitting on-device computed HOG descriptors to a central server for classification is a common requirement in edge computing, 
+but the high dimensionality of these vectors can lead to severe bandwidth limitations. 
+The goal of feature compression is to drastically reduce the payload size while maintaining the integrity of the data required for accurate classification.
+
+The first step in this pipeline is \textbf{Spatial Binning}, a technique that reduces the dimensionality by grouping adjacent cells. 
+This is typically optimized by applying a foveated structure: 
+smaller, high-resolution cells are concentrated at the center to capture the primary object of interest, 
+while larger, aggregated cells are used to summarize the background near the borders.
+
+Finally, the binned representations are compressed using entropy encoding techniques like Huffman coding. 
+By mapping the most frequent bin values to the shortest binary codes and rarer values to longer ones, the system achieves significant size reduction while preserving the exact informational content of the binned descriptors.
 
 \subsection{Scale-Invariant Feature Transform (SIFT)}
-Had a lot of success in the past, since it is efficienct and easy to implement.
+The Scale-Invariant Feature Transform (SIFT) algorithm is designed to detect and describe highly distinctive local features that are invariant to image scale and rotation. 
+While the previously discussed Good Features to Track algorithm is primarily limited to corner detection at a single scale, SIFT identifies keypoints that maintain stability across varied scales and orientations.
+
+\subsubsection{Keypoint Detection}
+To achieve scale invariance, SIFT detects keypoints by identifying local extrema within a continuous \textit{scale space} rather than the original spatial domain. 
+This scale space is constructed by progressively convolving the original image with Gaussian smoothing filters. 
+Formally, the scale space function $L(x, y, \sigma)$ is defined as:
+\begin{equation}
+    L(x, y, \sigma) = I(x, y) * \frac{1}{2\pi\sigma^2} e^{-\frac{x^2 + y^2}{2\sigma^2}}
+\end{equation}
+where $I(x, y)$ is the input image and $\sigma$ represents the scale parameter, which dictates the variance of the Gaussian kernel.
+
+The algorithm organizes this process into discrete octaves. 
+Within a single octave, the image is repeatedly convolved with Gaussians to produce a sequence of increasingly blurred images across different scales. 
+Once an octave is complete, the image is downsampled by a spatial factor of two, and the sequence repeats to form the next octave.
+
+To efficiently locate stable keypoints, SIFT computes the Difference of Gaussians (DoG) by subtracting adjacent scales within each octave. 
+A pixel in the resulting DoG volume is then compared against its 26 nearest neighbors: 8 in the current scale, 9 in the scale immediately above, and 9 in the scale immediately below. 
+If the pixel's magnitude is a strict local maximum or minimum among all 26 neighbors, it is isolated as a candidate keypoint.
+
+\subsubsection{Keypoint Refinement}
+After initial detection, SIFT performs a refinement step to improve the stability and localization accuracy of candidate keypoints.
+Since extrema detected in the Difference of Gaussians (DoG) volume may be affected by noise, 
+SIFT refines their locations using a second-order Taylor expansion of the DoG function around the candidate keypoint:
+\begin{equation}
+    D(\mathbf{X}) = D + \frac{\partial D^T}{\partial \mathbf{X}}\mathbf{X}
+    + \frac{1}{2}\mathbf{X}^T
+    \frac{\partial^2 D}{\partial \mathbf{X}^2}\mathbf{X}
+\end{equation}
+where $\mathbf{X} = (x, y, \sigma)^T$ represents the spatial and scale coordinates of the keypoint.
+By setting the derivative of $D(\mathbf{X})$ to zero, a more accurate estimate of the keypoint position can be obtained.
+Keypoints with low contrast are discarded, as they are more sensitive to noise and less reliable for matching.
+
+\paragraph{Edge Rejection}
+The DoG function often produces strong responses along edges, which do not necessarily correspond to stable or distinctive features.
+To eliminate such unstable detections, SIFT computes the \textbf{Hessian matrix} at each candidate keypoint to analyze the local curvature:
+\begin{equation}
+    H =
+    \begin{bmatrix}
+    D_{xx} & D_{xy} \
+    D_{xy} & D_{yy}
+    \end{bmatrix}
+\end{equation}
+where $D_{xx}$, $D_{yy}$, and $D_{xy}$ denote the second-order partial derivatives of the DoG function.
+Let $\alpha$ and $\beta$ represent the principal curvatures (eigenvalues) of the Hessian matrix, with ratio $r=\alpha/\beta$.
+A keypoint is retained only if:
+\[
+    \frac{\mathrm{Tr}(H)^2}{\mathrm{Det}(H)} < \frac{(r+1)^2}{r}
+\]
+This criterion removes points that exhibit disproportionately large curvature in one direction, 
+which are likely to correspond to edges and therefore produce unreliable feature matches.
+
+\subsubsection{Orientation Assignment}
+To achieve rotation invariance, an orientation is assigned to each refined keypoint based on the local image gradients.
+For neighboring pixels around the keypoint, the gradient magnitude and orientation are computed as:
+\begin{equation}
+    m(x,y)=\sqrt{(L(x+1,y)-L(x-1,y))^2+(L(x,y+1)-L(x,y-1))^2}
+\end{equation}
+\begin{equation}
+    \theta(x,y)=\tan^{-1} \left(\frac{L(x,y+1)-L(x,y-1)}{L(x+1,y)-L(x-1,y)}\right)
+\end{equation}
+A histogram of gradient orientations is then formed, and the dominant orientation is assigned to the keypoint.
+If multiple significant peaks exist, additional keypoints may be generated with corresponding orientations.
+This step ensures robustness to image rotation.
+
+\subsubsection{Feature Descriptor}
+Following orientation assignment, a local descriptor is computed around each keypoint.
+A \(16 \times 16\) neighborhood centered on the keypoint and aligned with its dominant orientation is divided into \(4 \times 4\) subregions.
+For each subregion, an 8-bin histogram of gradient orientations is constructed.
+The resulting descriptor therefore contains:
+\[
+4 \times 4 \times 8 = 128
+\]
+elements, producing a highly distinctive feature vector that is robust to changes in illumination, rotation, and moderate scale variations.
