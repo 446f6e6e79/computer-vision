@@ -1,0 +1,86 @@
+\section{3D Scene Reconstruction}
+Building upon previous chapters covering image processing, feature extraction, and multi-view geometry, we now address a new fundamental problem in computer vision:
+reconstructing the 3D Euclidean structure of a scene from multiple 2D projections.
+
+\subsection{Structure from Motion (SfM)}
+Structure from Motion (SfM) is the computational process of simultaneously estimating the 3D geometry of a scene and the 
+camera poses (motion) from a set of 2D images. 
+
+The classical SfM pipeline relies heavily on robust feature correspondence. 
+As the camera traverses the scene, perspective transformations and illumination variations alter keypoint appearance, making it hard to establish reliable matches across frames.
+To establish reliable correspondences across frames, we extract scale- and rotation-invariant descriptors (such as SIFT, SURF, or ORB) and match them.
+
+\paragraph{Epipolar Geometry and the Essential Matrix}
+For any pair of views, the geometric relationship between corresponding points is governed by the epipolar constraint.
+Assuming calibrated cameras, let $\mathbf{x}_1$ and $\mathbf{x}_2$ be corresponding points in normalized image coordinates. 
+The coplanarity of the camera centers and the 3D point dictates that:
+\[
+    \mathbf{x}_2^T E \mathbf{x}_1 = 0
+\]
+where $E$ is the $3 \times 3$ Essential Matrix. 
+Algebraically, $E$ encapsulates the relative rotation $R$ and translation $\mathbf{t}$ between the two camera views, defined as:
+\[
+    E = [\mathbf{t}]_{\times} R
+\]
+
+\paragraph{Degrees of Freedom and Estimation}
+While $E$ is a $3 \times 3$ matrix containing 9 elements, it possesses strict structural constraints. 
+A valid Essential Matrix has exactly 5 degrees of freedom: 
+\begin{itemize}
+    \item 3 derived from the rotation matrix $R$ 
+    \item 2 from the translation vector $\mathbf{t}$ (since the absolute metric scale cannot be recovered from images alone, introducing a scale ambiguity)
+\end{itemize}
+To estimate $E$, the classical 8-point algorithm provides a linear solution using Singular Value Decomposition (SVD), requiring a minimum of 8 corresponding point pairs. 
+
+\paragraph{Multiple Views}
+The two-view approach we have seen so far allows only an initial reconstruction of the scene structure, 
+but it is often insufficient for complex scenes.
+
+To achieve a more complete and accurate reconstruction, we can extend the SfM framework to handle multiple views, 
+allowing to resolve depth ambiguity and improve reconstruction accuracy.
+
+At this point we have multiple images, each with multiple matched keypoints, but only at a camera pair level.
+To fuse all this information together, we can use a global optimization technique called \textbf{bundle adjustment}, 
+which jointly refines the 3D point positions and camera parameters to minimize the reprojection error across all views.
+This process can be formalized as:
+\[
+    \arg\min_{\{\mathbf{R}_j, \mathbf{t}_j\}, \{\mathbf{X}_i\}}
+    \sum_{i=1}^{N} \sum_{j=1}^{M} 
+    v_{ij} \| \mathbf{x}_{ij} - \pi(K, \mathbf{R}_j, \mathbf{t}_j, \mathbf{X}_i) \|^2
+\]
+where:
+\begin{itemize}
+    \item $\mathbf{R}_j$ and $\mathbf{t}_j$ are the rotation and translation of the $j$-th camera,
+    \item $\mathbf{X}_i$ is the 3D position of the $i$-th keypoint,
+    \item $\mathbf{x}_{ij}$ is the observed 2D projection of $\mathbf{X}_i$ in the $j$-th image,
+    \item $K$ is the camera intrinsic matrix, and
+    \item $v_{ij}$ is a visibility indicator (1 if the point is visible in the image, 0 otherwise).
+\end{itemize}
+
+\subsection{Simultaneous Localization and Mapping (SLAM)}
+Simultaneous Localization and Mapping (SLAM) is a technique used in robotics and computer vision to build a map of an unknown environment while simultaneously keeping track of the agent's location within that environment.
+In SfM, the optimization is performed offline across all views. In the presence of a dense scene and a large number of views, this can be computationally expensive and not suitable for real-time applications.
+
+A usual example of SLAM is the case of a robot navigating in an unknown environment. It needs to estimate its own position while building a map of the environment.
+This is a chicken-and-egg problem: to build a map, the robot needs to know where it is; but to know where it is, it needs a map.
+
+\paragraph{The SLAM Pipeline}
+Unlike SfM, SLAM systems must operate strictly online and in real-time. The fundamental sequence follows:
+\[ \text{Features} \rightarrow \text{Matching} \rightarrow \text{Pose} \rightarrow \text{Map} \]
+To achieve this, the pipeline is generally modularized into four core components:
+\begin{itemize}
+    \item \textbf{Tracking:} Estimates the camera pose continuously as the agent moves.
+    \item \textbf{Local Mapping:} Constructs and updates the map of the immediate surroundings.
+    \item \textbf{Loop Closure:} Recognizes previously visited areas to correct drift.
+    \item \textbf{Global Optimization:} Refines the overall trajectory and map to ensure global consistency.
+\end{itemize}
+
+\paragraph{Loop Closure}
+In SLAM, the camera is continuously in motion (e.g., mounted on a robot). This means the state of the system (which feeds back into the tracking module) can be defined as:
+\[ x_t = f(x_{t-1}, u_t) + w_t \]
+Because the system relies on sequential estimations, small errors compound over time, making it necessary to correct the accumulated drift. Recognizing previously visited places helps resolve this issue. Once a loop closure is detected, global optimization can be conducted to minimize the overall re-projection error.
+
+\subsection{SfM vs SLAM}
+While they share theoretical foundations in geometry and feature matching, SfM and SLAM are optimized for different operational constraints. 
+In particular, SLAM must handle real-time processing and dynamic environments, allowing for online operation and autonomous navigation.
+On the other hand, SfM can afford to be more computationally intensive and is typically used for offline reconstruction, resulting in higher accuracy and completeness of the 3D model. 

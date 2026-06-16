@@ -18,63 +18,144 @@ Similarly, a standard 3D point $P = \begin{bmatrix} X, Y, Z \end{bmatrix}^T$ is 
 \[ P = \begin{bmatrix} sX, sY, sZ, s \end{bmatrix}^T \]
 
 \subsubsection{Scaling}
-Scaling resizes an object by multiplying point coordinates by scaling factors. The transformation is uniform if all factors are equal.
+Scaling resizes an object by multiplying point coordinates by scaling factors. 
+The transformation is \emph{uniform} if all scaling factors are equal.
 
-\paragraph{2D Case} The scaled coordinates $(x', y')$ are computed using the scaling matrix $S_{c_x, c_y}$:
-\[ \begin{bmatrix} x' \\ y' \end{bmatrix} = \begin{bmatrix} c_x & 0 \\ 0 & c_y \end{bmatrix} \begin{bmatrix} x \\ y \end{bmatrix} \]
+\paragraph{2D Case}
+In homogeneous coordinates, scaling by factors $(s_x, s_y)$ is defined as
+\[
+\mathbf{p}' = S(s_x,s_y)\mathbf{p},
+\qquad
+S(s_x,s_y)=
+\begin{bmatrix}
+s_x & 0 & 0 \\
+0 & s_y & 0 \\
+0 & 0 & 1
+\end{bmatrix},
+\]
+where
+\[
+\mathbf{p}=
+\begin{bmatrix}
+x\\y\\1
+\end{bmatrix},
+\qquad
+\mathbf{p}'=
+\begin{bmatrix}
+x'\\y'\\1
+\end{bmatrix}.
+\]
 
-\paragraph{3D Case} Scaling extends to the z-coordinate via a 4x4 transformation matrix:
-\[ ^2P_i = S(s_x, s_y, s_z) ^1P_i, \qquad S(s_x, s_y, s_z) = \begin{bmatrix}
+\paragraph{3D Case}
+Scaling extends naturally to the z-coordinate:
+\[
+\mathbf{p}' = S(s_x,s_y,s_z)\mathbf{p},
+\qquad
+S(s_x,s_y,s_z)=
+\begin{bmatrix}
 s_x & 0 & 0 & 0 \\
 0 & s_y & 0 & 0 \\
 0 & 0 & s_z & 0 \\
 0 & 0 & 0 & 1
-\end{bmatrix} \]
+\end{bmatrix},
+\]
+where
+\[
+\mathbf{p}=
+\begin{bmatrix}
+x\\y\\z\\1
+\end{bmatrix}.
+\]
 
 \subsubsection{Rotation}
 Rotation changes an object's orientation around the origin.
 
-\paragraph{2D Case} Rotation by angle $\theta$ (in radians) uses the matrix $R_{\theta}$:
-\[ \begin{bmatrix} x' \\ y' \end{bmatrix} = \begin{bmatrix} \cos \theta & -\sin \theta \\ \sin \theta & \cos \theta \end{bmatrix} \begin{bmatrix} x \\ y \end{bmatrix} \]
+\paragraph{2D Case}
+A rotation by angle $\theta$ (in radians) is defined as
+\[
+\mathbf{p}' = R(\theta)\mathbf{p},
+\qquad
+R(\theta)=
+\begin{bmatrix}
+\cos\theta & -\sin\theta & 0 \\
+\sin\theta & \cos\theta & 0 \\
+0 & 0 & 1
+\end{bmatrix}.
+\]
 
-\paragraph{3D Case} Rotations around the x, y, and z axes require specific 4x4 matrices:
+\paragraph{3D Case}
+In 3D, rotations are defined around the coordinate axes.
+
 \begin{itemize}
-\item \textbf{X-axis} ($\theta_x$):
-\[ R(X, \theta_x) = \begin{bmatrix}
+\item \textbf{Rotation around the x-axis}:
+\[
+\mathbf{p}' = R_x(\theta_x)\mathbf{p},
+\qquad
+R_x(\theta_x)=
+\begin{bmatrix}
 1 & 0 & 0 & 0 \\
-0 & \cos \theta_x & -\sin \theta_x & 0 \\
-0 & \sin \theta_x & \cos \theta_x & 0 \\
+0 & \cos\theta_x & -\sin\theta_x & 0 \\
+0 & \sin\theta_x & \cos\theta_x & 0 \\
 0 & 0 & 0 & 1
-\end{bmatrix} \]
-\item \textbf{Y-axis} ($\theta_y$):
-\[ R(Y, \theta_y) = \begin{bmatrix}
-\cos \theta_y & 0 & \sin \theta_y & 0 \\
+\end{bmatrix}.
+\]
+
+\item \textbf{Rotation around the y-axis}:
+\[
+\mathbf{p}' = R_y(\theta_y)\mathbf{p},
+\qquad
+R_y(\theta_y)=
+\begin{bmatrix}
+\cos\theta_y & 0 & \sin\theta_y & 0 \\
 0 & 1 & 0 & 0 \\
--\sin \theta_y & 0 & \cos \theta_y & 0 \\
+-\sin\theta_y & 0 & \cos\theta_y & 0 \\
 0 & 0 & 0 & 1
-\end{bmatrix} \]
-\item \textbf{Z-axis} ($\theta_z$):
-\[ R(Z, \theta_z) = \begin{bmatrix}
-\cos \theta_z & -\sin \theta_z & 0 & 0 \\
-\sin \theta_z & \cos \theta_z & 0 & 0 \\
+\end{bmatrix}.
+\]
+
+\item \textbf{Rotation around the z-axis}:
+\[
+\mathbf{p}' = R_z(\theta_z)\mathbf{p},
+\qquad
+R_z(\theta_z)=
+\begin{bmatrix}
+\cos\theta_z & -\sin\theta_z & 0 & 0 \\
+\sin\theta_z & \cos\theta_z & 0 & 0 \\
 0 & 0 & 1 & 0 \\
 0 & 0 & 0 & 1
-\end{bmatrix} \]
+\end{bmatrix}.
+\]
 \end{itemize}
 
 \subsubsection{Translation}
-Translation shifts an object without altering shape or orientation, equivalent to moving the coordinate origin.
+Translation shifts an object without altering its shape or orientation.
 
-\paragraph{2D Case} To shift a point by $(x_0, y_0)$, we use a 3x3 matrix applied to homogeneous coordinates:
-\[ \begin{bmatrix} x' \\ y' \\ 1 \end{bmatrix} = \begin{bmatrix} 1 & 0 & x_0 \\ 0 & 1 & y_0 \\ 0 & 0 & 1 \end{bmatrix} \begin{bmatrix} x \\ y \\ 1 \end{bmatrix} \]
+\paragraph{2D Case}
+A translation by $(t_x,t_y)$ is represented in homogeneous coordinates as
+\[
+\mathbf{p}' = T(t_x,t_y)\mathbf{p},
+\qquad
+T(t_x,t_y)=
+\begin{bmatrix}
+1 & 0 & t_x \\
+0 & 1 & t_y \\
+0 & 0 & 1
+\end{bmatrix}.
+\]
 
-\paragraph{3D Case} A 3D translation by $(t_x, t_y, t_z)$ uses a 4x4 matrix:
-\[ T(t_x, t_y, t_z) = \begin{bmatrix}
+\paragraph{3D Case}
+A translation by $(t_x,t_y,t_z)$ is defined as
+\[
+\mathbf{p}' = T(t_x,t_y,t_z)\mathbf{p},
+\qquad
+T(t_x,t_y,t_z)=
+\begin{bmatrix}
 1 & 0 & 0 & t_x \\
 0 & 1 & 0 & t_y \\
 0 & 0 & 1 & t_z \\
 0 & 0 & 0 & 1
-\end{bmatrix} \]
+\end{bmatrix}.
+\]
 
 \subsection{2D Camera Matrix}
 These transformations can be combined into a single \textbf{camera matrix}, which compactly maps real-world points to the 2D image plane.

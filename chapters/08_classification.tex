@@ -50,4 +50,6 @@ Viola-Jones typically relies on \textbf{AdaBoost}, an ensemble method that build
 where $\alpha_t$ is the weight based on training performance. The final output is $\text{sign}(f(x))$. AdaBoost trains iteratively, selecting optimal weak classifiers while increasing the weights of misclassified samples to focus the model on difficult cases.
 
 \paragraph{Classifier Cascade}
-To optimize detection speed, Viola-Jones uses a sequence (cascade) of binary classifiers. Each stage analyzes an image window; if a classifier predicts "non-object," the window is immediately discarded. This early rejection of negative samples drastically reduces overall computational cost.
+To optimize detection speed, Viola-Jones uses a sequence (cascade) of binary classifiers. 
+Each stage analyzes an image window; if a classifier predicts "non-object," the window is immediately discarded. 
+This early rejection of negative samples drastically reduces overall computational cost.
