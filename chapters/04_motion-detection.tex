@@ -98,6 +98,7 @@ This implies that the variation of the intensity of a point in the image plane i
 
 If we decompose the velocity into its components (normal and tangential with respect to the surface of the object),
 we can see that only the normal component of the velocity can be detected, since the tangential component does not cause any change in the intensity of the point.
+
 If we think about this from a practical point of view, this means that we can only detect the motion of the borders of the objects, while the motion of the internal points 
 of the objects cannot be detected as they would replace the same intensity values in the image plane, and therefore they would not cause any change in the intensity of the point.
 This is the aperture problem, a very well-known issue of the optical flow, which is detailed in the challenges below.
@@ -139,6 +140,7 @@ There are two main approaches to motion detection in practice:
     \item \textbf{Intensity-based methods}, which are based on the analysis of the changes in the image intensity over time;
     \item \textbf{Feature-based methods}: based on the analysis of the changes in the features of the objects in the scene over time.
     This requires additional steps of feature extraction and matching, but it can be more robust to changes in the illumination and to occlusions.
+    An example of a feature-based method is the Good Features to Track algorithm, which we will discuss in the next chapter.
 \end{itemize}
 
 \subsubsection{Change Detection}
@@ -159,7 +161,7 @@ From a computational point of view, this approach is very simple and fast. We ca
         FD_{K, K-1}(x, y) = s(x, y, k) - s(x, y, k-1)
     \end{equation}
     If $FD$ is not null, then a change has been detected in the pixel $[x, y]$;
-    \item \textbf{Tresholding}: to filter out the noise, we can apply a threshold to the resulting image. We can define the \textbf{thresholding operation} as:
+    \item \textbf{Thresholding}: to filter out the noise, we can apply a threshold to the resulting image. We can define the \textbf{thresholding operation} as:
     \begin{equation}    
         \label{eq:thresholding}
         T(x, y) = \begin{cases}
@@ -206,7 +208,7 @@ The update of the background model can be formalized as:
 \begin{equation}
     B_t = \alpha I(t) + (1 - \alpha) B_{t-1}
 \end{equation}
-Where $\alpha$ is a parameter that controls the update rate of the background model:
+Where $B_t$ is the background model at time $t$, $I(t)$ is the current frame, and $\alpha$ is a parameter that controls the update rate of the background model.
 \begin{itemize}
     \item If $\alpha$ is close to 1, the background model will be updated quickly, going back to the \textbf{change detection} approach;
     \item If $\alpha$ is close to 0, the background model will be updated slowly, maintaining a more stable representation of the background.
@@ -245,7 +247,7 @@ in which only the pixels that are classified as background are used to update th
 \begin{equation}
     \mu_t = M\mu_{t-1} + (1 - M)(\alpha I_t + (1 - \alpha) \mu_{t-1})
 \end{equation}
-Where $M$ is a binary mask that indicates which pixels are classified as background (1) and which pixels are classified as foreground (0).
+Where $M$ is a binary mask that indicates which pixels are classified as background (0) and which pixels are classified as foreground (1).
 If the pixel is classified as foreground, the background model is not updated at all, while if the pixel is classified as background, 
 the background model is updated as in the Gaussian average approach.
 
