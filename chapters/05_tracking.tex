@@ -415,23 +415,32 @@ The Kalman Filter then iteratively performs the prediction and update steps as n
 propagating the state estimate and its associated uncertainty over time.
 Given a new measurement $Z_t, \; \sigma_{z_t}^2$ at time $t$, the Kalman Filter performs the following steps:
 \begin{enumerate}
-    \item \textbf{Prediction:} we add a displacement to the previous state estimate
-    $$\hat{X}_t = \hat{X}_{t-1} + K_t (Z_t - \hat{X}_{t-1})$$
-    where $K_t$ is the \textbf{Kalman Gain}, which weights the influence of the new measurement 
-    relative to the current state estimate. It is computed as:
-    $$K_t = \frac{\sigma_{z_{t-1}}^2}{\sigma_{z_{t-1}}^2 + \sigma_{z_t}^2}$$
+    \item \textbf{Prediction:} since this scalar example has no motion model, the predicted state is simply the previous estimate carried forward unchanged, together with its uncertainty:
+    $$\hat{X}_t^- = \hat{X}_{t-1}, \qquad (\sigma_t^-)^2 = \sigma_{t-1}^2$$
+    Note that this step does not use the new measurement $Z_t$: it is the belief about the state \emph{before} looking at the observation.
 
-    We can see the prediction as a weighted average between the previous state estimate $\hat{X}_{t-1}$ and the new measurement $Z_t$, 
+    \item \textbf{Update:} once the measurement $Z_t$ is available, we correct the prediction by adding a displacement towards it:
+    $$\hat{X}_t = \hat{X}_t^- + K_t (Z_t - \hat{X}_t^-)$$
+    where $K_t$ is the \textbf{Kalman Gain}, which weights the influence of the new measurement
+    relative to the predicted state estimate. It is computed as:
+    $$K_t = \frac{(\sigma_t^-)^2}{(\sigma_t^-)^2 + \sigma_{z_t}^2}$$
+
+    We can see the updated estimate as a weighted average between the predicted state $\hat{X}_t^-$ and the new measurement $Z_t$,
     where the weights are determined by the relative uncertainties of the two sources of information.
-     
-    \item \textbf{Update:} we update the error variance of the state estimate:
-    $$\frac{1}{\sigma_t^2} = \frac{1}{\sigma_{z_{t-1}}^2} + \frac{1}{\sigma_{z_t}^2}$$
+
+    Finally, we refine the error variance of the state estimate, which decreases as the new measurement is incorporated:
+    $$\frac{1}{\sigma_t^2} = \frac{1}{(\sigma_t^-)^2} + \frac{1}{\sigma_{z_t}^2}$$
 \end{enumerate}
 The Kalman Filter provides a computationally efficient solution to the least-squares estimation problem. In particular,
 we are trying to find the Kalman Gain $K_t$ that minimizes the mean squared error of the state estimate $\hat{X}_t$.
 
 \subsubsection{Kalman Filter in Practice}
 Now that we have seen the mathematical formulation of the Kalman Filter, let's discuss how it can be applied in practice for motion tracking.
+
+Recall that the Bayesian framework described the state evolution and the observation through generic non-linear functions $f_t$ and $h_t$.
+Since the Kalman Filter assumes that these functions are linear and that the noise is additive and Gaussian, each function reduces to a matrix multiplication:
+$f_t$ becomes the state transition matrix $A_t$, and $h_t$ becomes the observation matrix $H_t$.
+This is what makes the closed-form solution possible and is the reason why the models below are expressed with matrices instead of generic functions.
 
 \paragraph{State Model}
 The state model can be represented as a linear function of the previous state and the control input, plus some process noise:
@@ -492,6 +501,10 @@ This is done by representing the set of possible alternative states of the syste
 Each particle represents a possible state of the system, and is associated with a weight that reflects the
 likelihood of that state given the observations.
 
+It is important to note that the particles are \textbf{not concentrated around a single point}: they are scattered across the \textbf{regions of high probability} of the state space, and may form several separate clusters at once.
+This is what allows the Particle Filter to represent multimodal distributions and track multiple competing hypotheses simultaneously, unlike the Kalman Filter, which is limited to a single unimodal estimate.
+
+The number of particles $N$ is a \textbf{hyperparameter}, fixed in advance and kept constant across all time steps.
 The higher the number of particles, the closer our approximation will be to the true posterior distribution, but this also increases the computational cost of the algorithm.
 
 \subsubsection{Theoretical Definition}
@@ -515,8 +528,10 @@ To update the particles and their weights, we perform the following steps:
     each weight by the sum of all weights:
     $$w_t^{(i)} = \frac{w_t^{(i)}}{\sum_{j=1}^N w_t^{(j)}}$$
     \item \textbf{Resampling:} To prevent the problem of particle degeneracy, where a few particles have significant weights while others have negligible weights, we perform resampling.
-    This involves drawing a new set of particles from the current set, with replacement, according to their weights.
-    Each new particle is assigned a weight of $\frac{1}{N}$, and the process is repeated for the next time step.
+    The idea is to treat the normalized weights as a probability distribution over the current particles, and then draw $N$ new particles from this distribution, with replacement.
+    Concretely, a particle's weight is the probability of it being picked: particles with a high weight are likely to be drawn several times (producing duplicates at the same state), while particles with a negligible weight are likely never drawn and simply disappear.
+    The result is a new set of the same size $N$, now crowded around the high-probability regions, where each particle is reset to a uniform weight of $\frac{1}{N}$.
+    The process is then repeated for the next time step.
 \end{enumerate}
 This way, at each iteration, more particles are concentrated in regions of the state space that are more likely given the observations, allowing for a more accurate approximation of the posterior distribution.
 
