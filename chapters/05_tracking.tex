@@ -288,17 +288,27 @@ I^L(x, y) =
 \end{aligned}
 \]
 
-At each level of the pyramid, an initial guess $g$ is obtained using the Lucas-Kanade method. 
-The guess is then refined at each level and used to pre-translate the image patches for the next level, which allows for more accurate tracking of larger displacements.
+The algorithm starts at the top of the pyramid, where the images are smallest, and works its way down to the bottom, where the images are largest and most precise.
+The guess $g^L$ is an estimate of the displacement of the feature, i.e. how far it has moved between the two frames, expressed at the resolution of level $L$.
+At the top level $L_m$ there is no prior information about the movement, so the initial guess is $g^{L_m} = 0$.
 
-The estimated displacement is then refined by propagating it down the pyramid:
-$$g^{L-1} = 2(g^L + d^{L})$$ 
+At each level $L$, the incoming guess $g^L$ is first used to \textbf{pre-translate} (warp) the image $I_{i+1}$ by $g^L$.
+The Lucas-Kanade method is then applied to this pre-translated image to compute only the \textbf{residual displacement} $d^L$,
+the small motion that the guess did not yet account for.
+Because $g^L$ already absorbs most of the displacement, $d^L$ is small enough for the optical flow assumption to hold, even when the true motion between frames is large.
+
+The refined estimate is then propagated to the next finer level:
+$$g^{L-1} = 2(g^L + d^{L})$$
 Where:
 \begin{itemize}
-    \item $g^L$ is the displacement estimated at level $L$. It is multiplied by 2 to account for the fact that the resolution at level $L$ is half of the resolution at level $L-1$, 
+    \item $g^L$ is the guess propagated from the coarser level $L$. It is multiplied by 2 to account for the fact that the resolution at level $L$ is half of the resolution at level $L-1$,
     so the displacement needs to be scaled accordingly.
-    \item $d^{L}$ is the correction term computed at level $L$ to fine-tune the estimate.
+    \item $d^{L}$ is the correction term computed by Lucas-Kanade at level $L$ to fine-tune the estimate.
 \end{itemize}
+Repeating this until level $0$ yields the final optical flow $d = g^0 + d^0$.
+
+This is what resolves the accuracy--robustness conflict: at coarse levels a large displacement is reduced to a few pixels,
+so a small window can track it robustly, while the fine levels recover the precise sub-pixel motion.
 
 \subsection{Bayesian Tracking}
 All the approaches seen so far are based on the assumption that the motion of the objects can be predicted by simply applying a deterministic model to the previous state of the system.
