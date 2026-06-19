@@ -33,8 +33,7 @@ HOG is inherently not scale-invariant, which causes issues when detecting object
 This is resolved using a \textbf{multi-scale image pyramid}: the image is iteratively downsampled, and HOG features 
 are extracted at each level to detect objects of different sizes.
 
-\subsection{Feature Compression}
-\subsection{Feature Compression}
+\subsubsection{Feature Compression}
 Transmitting on-device computed HOG descriptors to a central server for classification is a common requirement in edge computing, 
 but the high dimensionality of these vectors can lead to severe bandwidth limitations. 
 The goal of feature compression is to drastically reduce the payload size while maintaining the integrity of the data required for accurate classification.
@@ -51,22 +50,35 @@ By mapping the most frequent bin values to the shortest binary codes and rarer v
 The Scale-Invariant Feature Transform (SIFT) algorithm is designed to detect and describe highly distinctive local features that are invariant to image scale and rotation. 
 While the previously discussed Good Features to Track algorithm is primarily limited to corner detection at a single scale, SIFT identifies keypoints that maintain stability across varied scales and orientations.
 
-\subsubsection{Keypoint Detection}
-To achieve scale invariance, SIFT detects keypoints by identifying local extrema within a continuous \textit{scale space} rather than the original spatial domain. 
-This scale space is constructed by progressively convolving the original image with Gaussian smoothing filters. 
+\subsubsection{Scale-Space Construction}
+The same structure in the world appears large when the camera is close and small when far away, so detecting a feature regardless of its apparent size requires representing the image at every possible amount of blur, not just one.
+This motivates the \textit{continuous scale space}: a representation in which scale is treated as a real-valued dimension $\sigma$ alongside the two spatial coordinates, smoothly sweeping from a sharp image (small $\sigma$) to a heavily blurred one (large $\sigma$).
+A feature can then be located not only in space but also at its \emph{characteristic scale}, which is what ultimately makes the descriptor scale-invariant.
+To achieve this, SIFT detects keypoints within this scale space rather than the original spatial domain.
+The scale space is constructed by progressively convolving the image with Gaussian smoothing filters of increasing standard deviation.
 Formally, the scale space function $L(x, y, \sigma)$ is defined as:
 \begin{equation}
     L(x, y, \sigma) = I(x, y) * \frac{1}{2\pi\sigma^2} e^{-\frac{x^2 + y^2}{2\sigma^2}}
 \end{equation}
-where $I(x, y)$ is the input image and $\sigma$ represents the scale parameter, which dictates the variance of the Gaussian kernel.
+where $I(x, y)$ is the input image and $\sigma$ is the scale parameter, which dictates the variance of the Gaussian kernel.
 
-The algorithm organizes this process into discrete octaves. 
-Within a single octave, the image is repeatedly convolved with Gaussians to produce a sequence of increasingly blurred images across different scales. 
-Once an octave is complete, the image is downsampled by a spatial factor of two, and the sequence repeats to form the next octave.
+Since the continuous scale space cannot be stored exactly, it is sampled at discrete blur levels, organized into \textbf{octaves}, each spanning a doubling of the blur level $\sigma$.
+Two distinct operations must be kept separate:
+\begin{itemize}
+    \item \textbf{Within an octave (fixed resolution).} Starting from a base blur $\sigma_0$, the base image is repeatedly convolved with Gaussians so that $\sigma$ grows by a constant multiplicative factor $k$ at each step ($\sigma_0,\ k\sigma_0,\ k^2\sigma_0, \dots$). An octave is therefore a \emph{stack} of images at the same resolution but with increasing blur.
+    \item \textbf{Between octaves (halved resolution).} To form the next octave, the algorithm takes the image within the current octave whose blur equals $2\sigma_0$ and downsamples it by a factor of two (keeping every second pixel). After downsampling, this image's effective blur on the coarser pixel grid is back to $\sigma_0$, so the scale progression continues seamlessly.
+\end{itemize}
+Downsampling the $2\sigma_0$ image (rather than re-blurring the original) is an efficiency choice: a large absolute blur is far cheaper to apply on a small image than on the full-resolution one.
+This between-octave step is the same Gaussian-pyramid idea used in the Lucas--Kanade pyramidal implementation; the difference is that each octave is not a single image but an entire stack spanning the intra-octave blur dimension.
 
-To efficiently locate stable keypoints, SIFT computes the Difference of Gaussians (DoG) by subtracting adjacent scales within each octave. 
-A pixel in the resulting DoG volume is then compared against its 26 nearest neighbors: 8 in the current scale, 9 in the scale immediately above, and 9 in the scale immediately below. 
-If the pixel's magnitude is a strict local maximum or minimum among all 26 neighbors, it is isolated as a candidate keypoint.
+\subsubsection{Extrema Detection (Difference of Gaussians)}
+To efficiently locate stable keypoints across the scale space, SIFT computes the Difference of Gaussians (DoG) by subtracting adjacent blur levels within each octave:
+\begin{equation}
+    D(x, y, \sigma) = L(x, y, k\sigma) - L(x, y, \sigma)
+\end{equation}
+which provides a close approximation of the scale-normalized Laplacian of Gaussian while being cheap to compute.
+A pixel in the resulting DoG volume is then compared against its 26 nearest neighbors: 8 in the current scale, 9 in the scale immediately above, and 9 in the scale immediately below.
+If the pixel's value is a strict local maximum or minimum among all 26 neighbors, it is isolated as a candidate keypoint.
 
 \subsubsection{Keypoint Refinement}
 After initial detection, SIFT performs a refinement step to improve the stability and localization accuracy of candidate keypoints.
@@ -87,7 +99,7 @@ To eliminate such unstable detections, SIFT computes the \textbf{Hessian matrix}
 \begin{equation}
     H =
     \begin{bmatrix}
-    D_{xx} & D_{xy} \
+    D_{xx} & D_{xy} \\
     D_{xy} & D_{yy}
     \end{bmatrix}
 \end{equation}
